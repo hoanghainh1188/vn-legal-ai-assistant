@@ -1,11 +1,32 @@
 node_modules/
 dist/
 build/
+.next/
 .env
 .env.*
+!.env.example
 *.log
 .claude/settings.local.json
 .claude.template-backup/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ChromaDB
+chroma_data/
+backend/chroma_data/
+
+# Data: processed legal text (backend/data/raw/*.txt) and source HTML
+# (backend/data/raw_html/) ARE committed — they are the ingestion input and
+# hard to re-fetch (vbpl.vn is behind reCAPTCHA). Regenerate the .txt from the
+# HTML with scripts/html_to_legal_text.py.
 
 # LƯU Ý: các thư mục sau CỐ Ý được commit để giữ traceability
 # - docs/intake/       (bằng chứng agent đã hiểu tài liệu Nhật)

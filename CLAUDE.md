@@ -1,11 +1,14 @@
 # Quy ước dự án cho AI agent
 
 ## Tổng quan
-<Điền: dự án làm gì, khách hàng là ai, ngôn ngữ tài liệu thiết kế gốc>
+PoC web app tra cứu pháp luật Việt Nam bằng AI (RAG), phạm vi: Luật Nhà ở 2023 và Nghị định 95/2024/NĐ-CP.
+Đối tượng: người dân phổ thông. Ngôn ngữ: tiếng Việt.
 
 ## Tech stack
-<Điền khi bắt đầu code — mặc dù `impl-planner` của Spec Kit sẽ tự phát hiện, khai báo sẵn ở đây
-giúp mọi agent nhất quán ngay từ lượt gọi đầu tiên>
+- **Frontend**: Next.js 14+ (App Router), Tailwind CSS, Lucide Icons
+- **Backend**: Python 3.12, FastAPI, ChromaDB (local vector DB)
+- **AI**: Ollama local — `qwen3.5` (chat), `nomic-embed-text` (embedding)
+- **Package managers**: `uv` (Python), `npm` (Node)
 
 ## Cấu trúc và ý nghĩa từng phần
 
@@ -41,9 +44,20 @@ Trình tự: design-intake → [handoff] specify → clarify → plan → tasks 
 → code-reviewer → **test gate** → **deploy**. Dừng xin xác nhận ở mọi checkpoint.
 
 ## Deploy
-<Điền phương thức deploy cụ thể của dự án — `/design-to-code` bước 12 sẽ đọc mục này.
-Ví dụ: `vercel --prod`, hoặc push lên branch trigger CI/CD, hoặc build container + đẩy registry.
-Nếu để trống, pipeline sẽ dừng và hỏi bạn trước khi deploy.>
+- **Frontend**: Vercel (`vercel --prod` từ thư mục `frontend/`)
+- **Backend**: Docker Compose (`docker compose up -d` từ root)
+
+## Cách chạy local
+```bash
+# Backend (port 8000)
+cd backend && uv run uvicorn app.main:app --reload --port 8000
+
+# Frontend (port 3000)
+cd frontend && npm run dev
+
+# Ingest data (chạy 1 lần)
+cd backend && uv run python scripts/ingest.py
+```
 
 ## Quy tắc bắt buộc
 1. Mọi mâu thuẫn giữa basic design / detail design / Figma phải được nêu vào `/speckit.clarify`,
