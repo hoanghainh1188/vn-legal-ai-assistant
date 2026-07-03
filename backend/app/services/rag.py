@@ -6,11 +6,13 @@ from collections.abc import AsyncIterator
 from app.config import settings
 from app.models.schemas import SourceDocument
 from app.prompts.system import SYSTEM_PROMPT, build_prompt
-from app.services import llm, vector_store
+from app.providers import factory
+from app.services import vector_store
 
 
 async def search_stream(query: str) -> AsyncIterator[str]:
-    query_embedding = await llm.embed_text(query)
+    embedding_provider = factory.get_embedding_provider()
+    query_embedding = await embedding_provider.embed_text(query)
 
     client = vector_store.get_client()
     collection = vector_store.get_collection(client)
@@ -27,7 +29,8 @@ async def search_stream(query: str) -> AsyncIterator[str]:
     context = _format_context(sources)
     user_message = build_prompt(context, query)
 
-    async for token in llm.chat_stream(SYSTEM_PROMPT, user_message):
+    chat_provider = factory.get_chat_provider()
+    async for token in chat_provider.stream(SYSTEM_PROMPT, user_message):
         token_event = {"type": "token", "data": token}
         yield f"data: {json.dumps(token_event, ensure_ascii=False)}\n\n"
 

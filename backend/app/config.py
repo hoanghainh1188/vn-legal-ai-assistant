@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     max_embed_chars: int = 8000
     frontend_origin: str = "http://localhost:3000"
 
+    # Provider selection (hybrid AI). Default "ollama" giữ hành vi PoC.
+    chat_provider: str = "ollama"  # ollama | claude
+    embedding_provider: str = "ollama"  # ollama
+    claude_api_key: str | None = None  # từ env, KHÔNG hardcode
+    claude_model: str = "claude-sonnet-4-6"
+    claude_timeout: float = 300.0
+
     model_config = {"env_prefix": "VN_LEGAL_", "env_file": ".env"}
 
 

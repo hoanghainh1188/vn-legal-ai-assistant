@@ -10,14 +10,14 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Thêm dependency `anthropic>=0.40` (ghim version tối thiểu) vào `[project.dependencies]` trong `backend/pyproject.toml`
-- [ ] T002 Chạy `uv sync` trong `backend/` để cài `anthropic`
-- [ ] T003 [P] Thêm các trường config provider vào `backend/app/config.py`: `chat_provider` (default "ollama"), `embedding_provider` (default "ollama"), `claude_api_key` (str|None), `claude_model` (default "claude-sonnet-4-6"), `claude_timeout` (default 300.0)
+- [X] T001 Thêm dependency `anthropic>=0.40` (ghim version tối thiểu) vào `[project.dependencies]` trong `backend/pyproject.toml`
+- [X] T002 Chạy `uv sync` trong `backend/` để cài `anthropic`
+- [X] T003 [P] Thêm các trường config provider vào `backend/app/config.py`: `chat_provider` (default "ollama"), `embedding_provider` (default "ollama"), `claude_api_key` (str|None), `claude_model` (default "claude-sonnet-4-6"), `claude_timeout` (default 300.0)
 
 ## Phase 2: Foundational (chặn tất cả user story)
 
-- [ ] T004 Tạo `backend/app/providers/__init__.py`
-- [ ] T005 Định nghĩa `ChatProvider` và `EmbeddingProvider` (Protocol) trong `backend/app/providers/base.py` theo `contracts/providers.md`
+- [X] T004 Tạo `backend/app/providers/__init__.py`
+- [X] T005 Định nghĩa `ChatProvider` và `EmbeddingProvider` (Protocol) trong `backend/app/providers/base.py` theo `contracts/providers.md`
 
 ---
 
@@ -26,17 +26,17 @@
 **Goal**: Refactor sang abstraction mà giữ nguyên hành vi mặc định (Ollama). **Independent test**: `uv run pytest` + 3 acceptance case xanh, output không đổi.
 
 ### Tests (viết trước)
-- [ ] T006 [P] [US1] Test factory chọn Ollama theo mặc định (`get_chat_provider`, `get_embedding_provider`) trong `backend/tests/test_providers.py`
-- [ ] T007 [P] [US1] Test `OllamaEmbeddingProvider.embed_text` cắt theo `max_embed_chars` (giữ hành vi) trong `backend/tests/test_providers.py`
+- [X] T006 [P] [US1] Test factory chọn Ollama theo mặc định (`get_chat_provider`, `get_embedding_provider`) trong `backend/tests/test_providers.py`
+- [X] T007 [P] [US1] Test `OllamaEmbeddingProvider.embed_text` cắt theo `max_embed_chars` (giữ hành vi) trong `backend/tests/test_providers.py`
 
 ### Implementation
-- [ ] T008 [US1] Hiện thực `OllamaChatProvider` + `OllamaEmbeddingProvider` trong `backend/app/providers/ollama.py` (port logic từ `services/llm.py`: qwen3.5 `think=false`, bge-m3, cắt độ dài)
-- [ ] T009 [US1] Hiện thực `get_chat_provider()` + `get_embedding_provider()` trong `backend/app/providers/factory.py` (chọn theo config; giá trị lạ → `ValueError`)
-- [ ] T010 [US1] Sửa `backend/app/services/rag.py` dùng factory thay vì import `services/llm` trực tiếp
-- [ ] T011 [US1] Sửa `backend/scripts/ingest.py` dùng `get_embedding_provider()` thay `llm.embed_texts`
-- [ ] T012 [US1] Xóa `backend/app/services/llm.py` (logic đã chuyển sang `providers/ollama.py`)
-- [ ] T013 [US1] Cập nhật `backend/tests/test_rag.py` patch theo provider/factory thay vì `app.services.llm`
-- [ ] T014 [US1] Chạy `uv run pytest` + 3 acceptance case → tất cả xanh, xác nhận output không đổi
+- [X] T008 [US1] Hiện thực `OllamaChatProvider` + `OllamaEmbeddingProvider` trong `backend/app/providers/ollama.py` (port logic từ `services/llm.py`: qwen3.5 `think=false`, bge-m3, cắt độ dài)
+- [X] T009 [US1] Hiện thực `get_chat_provider()` + `get_embedding_provider()` trong `backend/app/providers/factory.py` (chọn theo config; giá trị lạ → `ValueError`)
+- [X] T010 [US1] Sửa `backend/app/services/rag.py` dùng factory thay vì import `services/llm` trực tiếp
+- [X] T011 [US1] Sửa `backend/scripts/ingest.py` dùng `get_embedding_provider()` thay `llm.embed_texts`
+- [X] T012 [US1] Xóa `backend/app/services/llm.py` (logic đã chuyển sang `providers/ollama.py`)
+- [X] T013 [US1] Cập nhật `backend/tests/test_rag.py` patch theo provider/factory thay vì `app.services.llm`
+- [X] T014 [US1] Chạy `uv run pytest` + 3 acceptance case → tất cả xanh, xác nhận output không đổi
 
 **Checkpoint**: MVP hoàn tất — hệ thống chạy trên abstraction, hành vi giống hệt trước.
 

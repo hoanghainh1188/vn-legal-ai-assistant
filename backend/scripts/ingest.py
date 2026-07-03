@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.config import settings
 from app.models.schemas import LegalChunk as AppChunk
-from app.services import llm, vector_store
+from app.providers import factory
+from app.services import vector_store
 from scripts.chunk_legal_text import chunk_legal_text
 from scripts.fetch_sources import ensure_html
 from scripts.html_to_legal_text import html_to_legal_text
@@ -42,7 +43,9 @@ async def ingest_source(
     chunks = chunk_legal_text(text, source.document_id)
     print(f"    parsed {len(chunks)} articles, embedding ...")
 
-    embeddings = await llm.embed_texts([c.content for c in chunks])
+    embeddings = await factory.get_embedding_provider().embed_texts(
+        [c.content for c in chunks]
+    )
     app_chunks = [
         AppChunk(
             article_number=c.article_number,
