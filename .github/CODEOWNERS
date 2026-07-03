@@ -1,0 +1,19 @@
+# CODEOWNERS — cơ chế "gác cổng" cho file dùng chung nhạy cảm.
+#
+# Mọi thay đổi vào các path dưới đây bắt buộc được steward duyệt TRƯỚC khi merge.
+# ⚠️ Chỉ có hiệu lực khi bật branch protection trên `main`:
+#    Settings → Branches → main → "Require review from Code Owners".
+#
+# 👉 THAY `@your-lead-handle` bằng GitHub handle thật của (các) steward — VD `@hoanghainh1188`.
+#    Có thể liệt kê nhiều người: `@lead1 @lead2`.
+
+# Thuật ngữ nghiệp vụ dùng chung toàn dự án
+docs/00-glossary.md            @your-lead-handle
+
+# Hiến pháp dự án — thắng mọi thứ trong workflow Spec Kit
+/.specify/memory/constitution.md   @your-lead-handle
+
+# Tài liệu thiết kế GỐC từ khách hàng (source of truth, không sửa tay tuỳ tiện)
+docs/01-basic-design/          @your-lead-handle
+docs/02-detail-design/         @your-lead-handle
+docs/03-ui/                    @your-lead-handle
