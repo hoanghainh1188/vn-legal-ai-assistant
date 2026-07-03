@@ -7,7 +7,7 @@ PoC web app tra cứu pháp luật Việt Nam bằng AI (RAG), phạm vi: Luật
 ## Tech stack
 - **Frontend**: Next.js 14+ (App Router), Tailwind CSS, Lucide Icons
 - **Backend**: Python 3.12, FastAPI, ChromaDB (local vector DB)
-- **AI**: Ollama local — `qwen3.5` (chat), `nomic-embed-text` (embedding)
+- **AI**: Ollama local — `qwen3.5` (chat), `bge-m3` (embedding)
 - **Package managers**: `uv` (Python), `npm` (Node)
 
 ## Cấu trúc và ý nghĩa từng phần
