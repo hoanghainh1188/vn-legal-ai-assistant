@@ -113,6 +113,7 @@ export function LegalReference({ sources }: LegalReferenceProps) {
                   </pre>
                   <div className="mt-2 text-xs text-slate-400">
                     Độ liên quan: {Math.round(source.relevance_score * 100)}%
+                    {source.domain && <> · Lĩnh vực: {source.domain}</>}
                     {source.eff_date && (
                       <> · Hiệu lực từ {formatDate(source.eff_date)}</>
                     )}

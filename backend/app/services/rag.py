@@ -14,13 +14,14 @@ from app.services import vector_store
 logger = logging.getLogger(__name__)
 
 
-async def search_stream(query: str) -> AsyncIterator[str]:
+async def search_stream(query: str, domain: str | None = None) -> AsyncIterator[str]:
     embedding_provider = factory.get_embedding_provider()
     query_embedding = await embedding_provider.embed_text(query)
 
     repo = repository.get_vector_repository()
-    dense = await repo.dense_candidates(query_embedding, settings.vector_pool)
-    corpus = await repo.all_rows()
+    # domain=None → không lọc (hành vi "Tất cả", giữ nguyên 3 acceptance case).
+    dense = await repo.dense_candidates(query_embedding, settings.vector_pool, domain)
+    corpus = await repo.all_rows(domain)
     sources = vector_store.hybrid_rank(
         query_embedding, query, dense, corpus, top_k=settings.retrieval_top_k
     )

@@ -20,6 +20,7 @@ class LegalSource:
     # vbpqNgaycohieuluc). Chỉ cấp văn bản — không suy diễn điều nào bị sửa.
     eff_status: str  # vd "Hết hiệu lực một phần", "Còn hiệu lực"
     eff_date: str  # ngày hiệu lực "YYYY-MM-DD"
+    domain: str  # lĩnh vực pháp luật (taxonomy tự chọn, vd "Nhà ở") — Feature #8
 
 
 SOURCES: list[LegalSource] = [
@@ -31,6 +32,7 @@ SOURCES: list[LegalSource] = [
         name="Luật Nhà ở 2023",
         eff_status="Hết hiệu lực một phần",
         eff_date="2024-08-01",
+        domain="Nhà ở",
     ),
     LegalSource(
         vbpl_id=169709,
@@ -40,6 +42,7 @@ SOURCES: list[LegalSource] = [
         name="Nghị định 95/2024/NĐ-CP",
         eff_status="Hết hiệu lực một phần",
         eff_date="2024-08-01",
+        domain="Nhà ở",
     ),
     LegalSource(
         vbpl_id=169711,
@@ -49,6 +52,7 @@ SOURCES: list[LegalSource] = [
         name="Nghị định 98/2024/NĐ-CP",  # cải tạo, xây dựng lại nhà chung cư
         eff_status="Hết hiệu lực một phần",
         eff_date="2024-08-01",
+        domain="Nhà ở",
     ),
     LegalSource(
         vbpl_id=169712,
@@ -58,6 +62,7 @@ SOURCES: list[LegalSource] = [
         name="Nghị định 100/2024/NĐ-CP",  # phát triển & quản lý nhà ở xã hội
         eff_status="Hết hiệu lực một phần",
         eff_date="2024-08-01",
+        domain="Nhà ở",
     ),
     LegalSource(
         vbpl_id=169122,
@@ -67,5 +72,6 @@ SOURCES: list[LegalSource] = [
         name="Thông tư 05/2024/TT-BXD",  # quy định chi tiết một số điều của Luật Nhà ở
         eff_status="Hết hiệu lực một phần",
         eff_date="2024-08-01",
+        domain="Nhà ở",
     ),
 ]

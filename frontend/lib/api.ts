@@ -1,10 +1,14 @@
 import type { RAGEvent } from "./types";
 
-export async function* searchStream(query: string): AsyncGenerator<RAGEvent> {
+export async function* searchStream(
+  query: string,
+  domain?: string | null,
+): AsyncGenerator<RAGEvent> {
   const response = await fetch("/api/query", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
+    // domain rỗng/null = "Tất cả" (backend không lọc).
+    body: JSON.stringify({ query, domain: domain ?? null }),
   });
 
   if (!response.ok) {

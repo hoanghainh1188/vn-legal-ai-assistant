@@ -30,6 +30,7 @@ class TestPgVectorRepository:
             document_name="Văn bản kiểm thử",
             eff_status="Hết hiệu lực một phần",
             eff_date="2024-08-01",
+            domain="Lĩnh vực kiểm thử",
         )
         emb = [0.01] * 1024
 
@@ -46,6 +47,11 @@ class TestPgVectorRepository:
             assert dense[0].document_name == "Văn bản kiểm thử"
             assert dense[0].eff_status == "Hết hiệu lực một phần"
             assert dense[0].eff_date == "2024-08-01"
+            # Feature #8: domain round-trip + lọc theo lĩnh vực + list_domains.
+            assert dense[0].domain == "Lĩnh vực kiểm thử"
+            assert await repo.dense_candidates(emb, limit=5, domain="Lĩnh vực kiểm thử")
+            assert await repo.dense_candidates(emb, limit=5, domain="Không tồn tại") == []
+            assert "Lĩnh vực kiểm thử" in await repo.list_domains()
         finally:
             # Dọn dữ liệu test để không làm bẩn kho thật.
             pool = await get_pool()

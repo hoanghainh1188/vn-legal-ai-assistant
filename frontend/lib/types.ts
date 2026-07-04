@@ -8,6 +8,8 @@ export interface SourceDocument {
   document_name?: string | null;
   eff_status?: string | null;
   eff_date?: string | null;
+  // Lĩnh vực pháp luật (Feature #8).
+  domain?: string | null;
 }
 
 export type RAGEvent =

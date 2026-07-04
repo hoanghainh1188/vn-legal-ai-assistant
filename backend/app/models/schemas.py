@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=500)
+    # Lọc theo lĩnh vực (Feature #8); None/không gửi = "Tất cả" (không lọc).
+    domain: str | None = Field(default=None, max_length=100)
 
 
 class SourceDocument(BaseModel):
@@ -15,6 +17,8 @@ class SourceDocument(BaseModel):
     document_name: str | None = None
     eff_status: str | None = None
     eff_date: str | None = None
+    # Lĩnh vực pháp luật (Feature #8).
+    domain: str | None = None
 
 
 class SearchSourcesEvent(BaseModel):

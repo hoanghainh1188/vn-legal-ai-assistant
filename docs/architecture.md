@@ -286,3 +286,19 @@ có ≥1 trích dẫn thuộc văn bản "hết hiệu lực một phần".
 > **Ranh giới (Constitution I)**: chỉ cấp văn bản. API MOJ KHÔNG có dữ liệu cấp điều
 > (`referenceProvisions` rỗng) → tuyệt đối không khẳng định "Điều X đã bị sửa bởi VB Y". Mapping cấp
 > điều / bản hợp nhất VBHN là việc sau khi có nguồn dữ liệu phù hợp.
+
+## 10. Nền tảng đa lĩnh vực (Feature #8, F1)
+
+Hệ thống được tổng quát hoá thành trợ lý pháp luật **đa lĩnh vực** (không còn khoá cứng "Luật Nhà ở"):
+
+- **Metadata lĩnh vực**: cột `domain` trên `legal_chunks` (taxonomy tự chọn trong `sources.py`, vd
+  "Nhà ở"). Carry tới `SourceDocument` → hiển thị.
+- **Prompt tổng quát**: `system.py` bỏ liệt kê cứng văn bản nhà ở; GIỮ NGUYÊN kỷ luật chống bịa
+  (chỉ-dùng-Context, không nêu văn bản ngoài Context, từ chối an toàn). Kiểm bằng test + 3 acceptance case.
+- **Lọc theo lĩnh vực**: `POST /api/query` nhận `domain` tùy chọn → repository `WHERE domain = %s`;
+  vắng/"Tất cả" = không lọc (hành vi cũ). `GET /api/domains` trả danh sách lĩnh vực **động** (DISTINCT) →
+  UI (`DomainFilter`) tự cập nhật khi thêm lĩnh vực mới, không sửa code.
+
+> **Tăng dần**: F1 là nền; mỗi lĩnh vực mới (đất đai, lao động…) thêm sau như feature dữ liệu (giống Pha 7)
+> — chỉ thêm `LegalSource` + `domain` + re-ingest. Đổi định vị trong `constitution.md` (tên "Trợ lý Luật
+> Nhà ở") thuộc file gác cổng → PR steward riêng.

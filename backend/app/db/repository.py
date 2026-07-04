@@ -30,6 +30,7 @@ class ChunkRow:
     document_name: str | None = None
     eff_status: str | None = None
     eff_date: str | None = None
+    domain: str | None = None  # lĩnh vực (Feature #8)
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ class RetrievedRow:
     document_name: str | None = None
     eff_status: str | None = None
     eff_date: str | None = None
+    domain: str | None = None
 
 
 @runtime_checkable
@@ -54,10 +56,12 @@ class VectorRepository(Protocol):
     async def upsert_chunks(self, chunks: list[ChunkRow], embeddings: list[list[float]]) -> int: ...
 
     async def dense_candidates(
-        self, query_embedding: list[float], limit: int
+        self, query_embedding: list[float], limit: int, domain: str | None = None
     ) -> list[RetrievedRow]: ...
 
-    async def all_rows(self) -> list[RetrievedRow]: ...
+    async def all_rows(self, domain: str | None = None) -> list[RetrievedRow]: ...
+
+    async def list_domains(self) -> list[str]: ...
 
     async def count(self) -> int: ...
 
@@ -77,6 +81,7 @@ class PgVectorRepository:
                 c.document_name,
                 c.eff_status,
                 c.eff_date,
+                c.domain,
                 Vector(e),
             )
             for c, e in zip(chunks, embeddings, strict=True)
@@ -86,12 +91,13 @@ class PgVectorRepository:
                 """
                 INSERT INTO legal_chunks
                     (document_id, article_number, article_title, chapter, content,
-                     document_name, eff_status, eff_date, embedding)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                     document_name, eff_status, eff_date, domain, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (document_id, article_number) DO UPDATE SET
                     article_title = EXCLUDED.article_title,
                     chapter       = EXCLUDED.chapter,
                     content       = EXCLUDED.content,
+                    domain        = EXCLUDED.domain,
                     document_name = EXCLUDED.document_name,
                     eff_status    = EXCLUDED.eff_status,
                     eff_date      = EXCLUDED.eff_date,
@@ -102,37 +108,54 @@ class PgVectorRepository:
         return len(chunks)
 
     async def dense_candidates(
-        self, query_embedding: list[float], limit: int
+        self, query_embedding: list[float], limit: int, domain: str | None = None
     ) -> list[RetrievedRow]:
         q = Vector(query_embedding)
+        where = "WHERE domain = %s" if domain else ""
+        # Thứ tự %s: similarity(q) → [domain] → ORDER BY(q) → LIMIT.
+        params: list = [q, *([domain] if domain else []), q, limit]
         pool = await get_pool()
         async with pool.connection() as conn, conn.cursor() as cur:
             await cur.execute(
-                """
+                f"""
                 SELECT document_id, article_number, article_title, chapter, content,
-                       document_name, eff_status, eff_date,
+                       document_name, eff_status, eff_date, domain,
                        embedding, 1 - (embedding <=> %s) AS similarity
                 FROM legal_chunks
+                {where}
                 ORDER BY embedding <=> %s
                 LIMIT %s
                 """,
-                (q, q, limit),
+                params,
             )
             rows = await cur.fetchall()
         return [self._to_row(r, has_similarity=True) for r in rows]
 
-    async def all_rows(self) -> list[RetrievedRow]:
+    async def all_rows(self, domain: str | None = None) -> list[RetrievedRow]:
+        where = "WHERE domain = %s" if domain else ""
+        params: list = [domain] if domain else []
         pool = await get_pool()
         async with pool.connection() as conn, conn.cursor() as cur:
             await cur.execute(
-                """
+                f"""
                 SELECT document_id, article_number, article_title, chapter, content,
-                       document_name, eff_status, eff_date, embedding
+                       document_name, eff_status, eff_date, domain, embedding
                 FROM legal_chunks
-                """
+                {where}
+                """,
+                params,
             )
             rows = await cur.fetchall()
         return [self._to_row(r, has_similarity=False) for r in rows]
+
+    async def list_domains(self) -> list[str]:
+        pool = await get_pool()
+        async with pool.connection() as conn, conn.cursor() as cur:
+            await cur.execute(
+                "SELECT DISTINCT domain FROM legal_chunks WHERE domain IS NOT NULL ORDER BY domain"
+            )
+            rows = await cur.fetchall()
+        return [r[0] for r in rows]
 
     async def count(self) -> int:
         pool = await get_pool()
@@ -152,9 +175,10 @@ class PgVectorRepository:
             document_name,
             eff_status,
             eff_date,
+            domain,
             embedding,
-        ) = record[:9]
-        similarity = float(record[9]) if has_similarity else 0.0
+        ) = record[:10]
+        similarity = float(record[10]) if has_similarity else 0.0
         return RetrievedRow(
             id=_synth_id(document_id, article_number),
             article_number=article_number,
@@ -167,6 +191,7 @@ class PgVectorRepository:
             document_name=document_name,
             eff_status=eff_status,
             eff_date=eff_date.isoformat() if eff_date is not None else None,
+            domain=domain,
         )
 
 

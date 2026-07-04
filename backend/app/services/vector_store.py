@@ -162,6 +162,7 @@ def hybrid_rank(
                 document_name=row.document_name,
                 eff_status=row.eff_status,
                 eff_date=row.eff_date,
+                domain=row.domain,
             )
         )
     # Present most semantically relevant first — leads both the "Cơ sở pháp lý"

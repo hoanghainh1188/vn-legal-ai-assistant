@@ -18,13 +18,15 @@ class TestSystemPrompt:
         assert "Theo Điều" in SYSTEM_PROMPT
 
     def test_system_prompt_in_vietnamese(self) -> None:
-        assert "trợ lý pháp lý" in SYSTEM_PROMPT
+        assert "trợ lý pháp luật" in SYSTEM_PROMPT
 
-    def test_system_prompt_declares_full_corpus_scope(self) -> None:
-        # Bắt phạm vi lỗi thời: prompt phải liệt kê đủ các văn bản trong corpus
-        # (Constitution I) — thêm văn bản mà quên cập nhật prompt sẽ đỏ ở đây.
-        for doc in ("27/2023/QH15", "95/2024", "98/2024", "100/2024", "05/2024/TT-BXD"):
-            assert doc in SYSTEM_PROMPT
+    def test_system_prompt_generalized_but_keeps_anti_hallucination(self) -> None:
+        # F1: prompt tổng quát (KHÔNG khoá cứng phạm vi = danh sách văn bản nhà ở) —
+        # tránh lỗi thời khi mở rộng lĩnh vực. Nhưng GIỮ chống bịa: chỉ-dùng-Context.
+        assert "27/2023/QH15" not in SYSTEM_PROMPT  # không liệt kê cứng văn bản làm phạm vi
+        assert "95/2024/NĐ-CP" not in SYSTEM_PROMPT
+        assert "chỉ được dùng" in SYSTEM_PROMPT  # vẫn giới hạn ở Context
+        assert "KHÔNG dùng kiến thức bên ngoài" in SYSTEM_PROMPT
 
     def test_build_prompt_includes_context_and_query(self) -> None:
         prompt = build_prompt("Điều 8 content", "Việt kiều mua nhà?")

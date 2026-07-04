@@ -1,8 +1,12 @@
 # Quy ước dự án cho AI agent
 
 ## Tổng quan
-PoC web app tra cứu pháp luật Việt Nam bằng AI (RAG), phạm vi: Luật Nhà ở 2023 và Nghị định 95/2024/NĐ-CP.
-Đối tượng: người dân phổ thông. Ngôn ngữ: tiếng Việt.
+Web app tra cứu pháp luật Việt Nam bằng AI (RAG), **đa lĩnh vực, mở rộng dần** (lọc theo lĩnh vực).
+Lĩnh vực hiện có: **Nhà ở** (Luật Nhà ở 2023 + NĐ 95/98/100/2024 + TT 05/2024/TT-BXD). Thêm lĩnh vực mới =
+thêm `LegalSource` + `domain` trong `sources.py` + re-ingest. Đối tượng: người dân phổ thông. Ngôn ngữ: tiếng Việt.
+
+> Định vị trong `.specify/memory/constitution.md` (tên "Trợ lý Luật Nhà ở") là file gác cổng — đổi qua PR
+> steward riêng, chưa cập nhật ở feature #8.
 
 ## Tech stack
 - **Frontend**: Next.js 16 (App Router), Tailwind CSS, Lucide Icons, `@supabase/ssr` (auth)

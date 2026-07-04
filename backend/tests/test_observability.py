@@ -14,7 +14,7 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def _fake_search(_query: str):
+def _fake_search(_query: str, _domain=None):
     async def gen():
         yield 'data: {"type": "done", "data": ""}\n\n'
 

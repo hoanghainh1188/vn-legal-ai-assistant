@@ -16,7 +16,7 @@ export function useStreamQuery() {
   const [state, setState] = useState<SearchState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
 
-  const search = useCallback(async (query: string) => {
+  const search = useCallback(async (query: string, domain?: string | null) => {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
 
@@ -26,7 +26,7 @@ export function useStreamQuery() {
     let capturedSources: SourceDocument[] = [];
 
     try {
-      for await (const event of searchStream(query)) {
+      for await (const event of searchStream(query, domain)) {
         if (abortRef.current?.signal.aborted) break;
 
         switch (event.type) {

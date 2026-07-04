@@ -86,6 +86,7 @@ class TestHybridRank:
             document_name="Luật Nhà ở 2023",
             eff_status="Hết hiệu lực một phần",
             eff_date="2024-08-01",
+            domain="Nhà ở",
         )
         results = hybrid_rank(
             query_embedding=[0.0, 1.0],
@@ -97,3 +98,4 @@ class TestHybridRank:
         assert results[0].document_name == "Luật Nhà ở 2023"
         assert results[0].eff_status == "Hết hiệu lực một phần"
         assert results[0].eff_date == "2024-08-01"
+        assert results[0].domain == "Nhà ở"

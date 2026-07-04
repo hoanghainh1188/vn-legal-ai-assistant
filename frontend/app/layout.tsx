@@ -9,9 +9,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Trợ lý Luật Nhà ở Việt Nam",
+  title: "Trợ lý pháp luật Việt Nam",
   description:
-    "Tra cứu Luật Nhà ở 2023 và Nghị định 95/2024 bằng ngôn ngữ tự nhiên. Công cụ tham khảo, không thay thế tư vấn pháp lý chuyên nghiệp.",
+    "Tra cứu pháp luật Việt Nam bằng ngôn ngữ tự nhiên, lọc theo lĩnh vực. Công cụ tham khảo, không thay thế tư vấn pháp lý chuyên nghiệp.",
 };
 
 export default function RootLayout({

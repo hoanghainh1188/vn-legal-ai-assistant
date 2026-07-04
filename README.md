@@ -1,12 +1,12 @@
-# Trợ lý tra cứu Luật Nhà ở Việt Nam (RAG PoC)
+# Trợ lý pháp luật Việt Nam (RAG)
 
 Ứng dụng web tra cứu pháp luật Việt Nam bằng AI, cho phép người dân hỏi bằng **ngôn ngữ
-tự nhiên** và nhận câu trả lời dễ hiểu kèm **trích dẫn điều luật**. Toàn bộ AI chạy
-**local** qua Ollama — không gọi API bên ngoài.
+tự nhiên** và nhận câu trả lời dễ hiểu kèm **trích dẫn điều luật**, **lọc theo lĩnh vực**.
+Nền tảng **đa lĩnh vực, mở rộng dần** (thêm lĩnh vực = thêm văn bản + re-ingest).
 
-Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (27/2023/QH15)** + bộ văn bản quy định chi tiết —
-**NĐ 95/2024** (chung), **NĐ 98/2024** (cải tạo chung cư), **NĐ 100/2024** (nhà ở xã hội),
-**TT 05/2024/TT-BXD** — tổng **440 điều** (chunk).
+Lĩnh vực hiện có: **Nhà ở** — Luật Nhà ở 2023 (27/2023/QH15) + bộ văn bản quy định chi tiết
+(NĐ 95/98/100/2024, TT 05/2024/TT-BXD) — tổng **440 điều** (chunk). Các lĩnh vực khác (đất đai,
+lao động…) thêm dần.
 
 ## Tính năng
 

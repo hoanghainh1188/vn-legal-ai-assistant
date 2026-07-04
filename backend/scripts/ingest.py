@@ -53,6 +53,7 @@ async def ingest_source(source: LegalSource, repo: repository.VectorRepository) 
             document_name=source.name,
             eff_status=source.eff_status,
             eff_date=source.eff_date,
+            domain=source.domain,
         )
         for c in chunks
     ]

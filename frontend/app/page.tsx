@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowLeft, Scale } from "lucide-react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SuggestedQuestions } from "@/components/search/SuggestedQuestions";
+import { DomainFilter } from "@/components/search/DomainFilter";
 import { AnswerStream } from "@/components/result/AnswerStream";
 import { LegalReference } from "@/components/result/LegalReference";
 import { SafetyDisclaimer } from "@/components/result/SafetyDisclaimer";
@@ -10,12 +12,13 @@ import { useStreamQuery } from "@/hooks/useStreamQuery";
 
 export default function Home() {
   const { status, answer, sources, error, search, reset } = useStreamQuery();
+  const [domain, setDomain] = useState<string | null>(null);
 
   const isIdle = status === "idle";
   const isActive = !isIdle;
 
   function handleSearch(query: string) {
-    search(query);
+    search(query, domain);
   }
 
   return (
@@ -27,13 +30,15 @@ export default function Home() {
               <Scale className="text-primary" size={32} />
             </div>
             <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-              Tra cứu Luật Nhà ở
+              Tra cứu pháp luật Việt Nam
             </h1>
             <p className="mt-2 text-slate-500 max-w-md mx-auto">
-              Hỏi bằng ngôn ngữ tự nhiên về Luật Nhà ở 2023 và Nghị định 95/2024
+              Hỏi bằng ngôn ngữ tự nhiên. Chọn lĩnh vực để thu hẹp phạm vi tra
+              cứu.
             </p>
           </div>
           <SearchBar onSearch={handleSearch} isLoading={false} size="large" />
+          <DomainFilter value={domain} onChange={setDomain} />
           <SuggestedQuestions onSelect={handleSearch} />
         </div>
       ) : (
