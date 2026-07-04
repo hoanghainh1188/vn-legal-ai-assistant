@@ -47,16 +47,16 @@
 **Goal**: Chọn Claude qua config; lỗi giữa chừng phát SSE `error`. **Independent test**: đặt `chat_provider=claude` + key → trả lời qua Claude; thiếu key → lỗi rõ ràng; mock lỗi mid-stream → sự kiện `error`.
 
 ### Tests (viết trước)
-- [ ] T015 [P] [US2] Test `ClaudeChatProvider.stream` yield text (mock `anthropic` messages.stream) trong `backend/tests/test_claude_provider.py`
-- [ ] T016 [P] [US2] Test factory raise lỗi cấu hình rõ ràng khi `chat_provider=claude` mà thiếu `claude_api_key`, **và xác nhận `claude_api_key` KHÔNG xuất hiện trong thông điệp lỗi/log** (FR-007), trong `backend/tests/test_providers.py`
-- [ ] T017 [US2] Test `rag.search_stream` phát sự kiện SSE `error` (không phát `done`) khi provider lỗi sau vài token, trong `backend/tests/test_query.py`
+- [X] T015 [P] [US2] Test `ClaudeChatProvider.stream` yield text (mock `anthropic` messages.stream) trong `backend/tests/test_claude_provider.py`
+- [X] T016 [P] [US2] Test factory raise lỗi cấu hình rõ ràng khi `chat_provider=claude` mà thiếu `claude_api_key`, **và xác nhận `claude_api_key` KHÔNG xuất hiện trong thông điệp lỗi/log** (FR-007), trong `backend/tests/test_providers.py`
+- [X] T017 [US2] Test `rag.search_stream` phát sự kiện SSE `error` (không phát `done`) khi provider lỗi sau vài token, trong `backend/tests/test_query.py`
 
 ### Implementation
-- [ ] T018 [US2] Hiện thực `ClaudeChatProvider` trong `backend/app/providers/claude.py` (Anthropic async SDK, `messages.stream` → `text_stream`, model `claude_model`, timeout `claude_timeout`)
-- [ ] T019 [US2] Mở rộng `factory.py`: hỗ trợ `chat_provider=claude`, kiểm tra key trước khi khởi tạo
-- [ ] T020 [US2] Sửa `backend/app/services/rag.py`: bọc vòng streaming try/except → phát `data: {"type":"error",...}` khi lỗi mid-stream (FR-011); thêm `SearchErrorEvent` vào `backend/app/models/schemas.py`
-- [ ] T021 [US2] Frontend xử lý sự kiện `error`: thêm vào `frontend/lib/types.ts` (RAGEvent), `frontend/hooks/useStreamQuery.ts` (set trạng thái lỗi), `frontend/app/page.tsx` (hiển thị lỗi, không coi phần dở là hoàn chỉnh)
-- [ ] T022 [US2] Thêm log INFO tên provider + model khi factory khởi tạo (KHÔNG log key) trong `backend/app/providers/factory.py`
+- [X] T018 [US2] Hiện thực `ClaudeChatProvider` trong `backend/app/providers/claude.py` (Anthropic async SDK, `messages.stream` → `text_stream`, model `claude_model`, timeout `claude_timeout`)
+- [X] T019 [US2] Mở rộng `factory.py`: hỗ trợ `chat_provider=claude`, kiểm tra key trước khi khởi tạo
+- [X] T020 [US2] Sửa `backend/app/services/rag.py`: bọc vòng streaming try/except → phát `data: {"type":"error",...}` khi lỗi mid-stream (FR-011); thêm `SearchErrorEvent` vào `backend/app/models/schemas.py`
+- [X] T021 [US2] Frontend xử lý sự kiện `error`: thêm vào `frontend/lib/types.ts` (RAGEvent), `frontend/hooks/useStreamQuery.ts` (set trạng thái lỗi), `frontend/app/page.tsx` (hiển thị lỗi, không coi phần dở là hoàn chỉnh)
+- [X] T022 [US2] Thêm log INFO tên provider + model khi factory khởi tạo (KHÔNG log key) trong `backend/app/providers/factory.py`
 
 **Checkpoint**: Đổi được Ollama ↔ Claude bằng config; lỗi mid-stream báo rõ ràng.
 
@@ -66,16 +66,16 @@
 
 **Goal**: Thêm provider mới không phải sửa orchestration. **Independent test**: fake provider qua factory được `rag` dùng mà không đổi mã orchestration.
 
-- [ ] T023 [P] [US3] Test: đăng ký một fake `ChatProvider` qua factory (monkeypatch) và xác nhận `rag` dùng được nó, không thay đổi mã `rag.py`, trong `backend/tests/test_providers.py`
+- [X] T023 [P] [US3] Test: đăng ký một fake `ChatProvider` qua factory (monkeypatch) và xác nhận `rag` dùng được nó, không thay đổi mã `rag.py`, trong `backend/tests/test_providers.py`
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T024 [P] Cập nhật `backend/.env.example` liệt kê biến mới (VN_LEGAL_CHAT_PROVIDER, EMBEDDING_PROVIDER, CLAUDE_API_KEY, CLAUDE_MODEL, CLAUDE_TIMEOUT)
-- [ ] T025 [P] Cập nhật `docs/architecture.md`: lớp provider abstraction + sự kiện SSE `error`
-- [ ] T026 Chạy `uv run ruff check .` và kiểm tra coverage ≥ 80% (`uv run pytest --cov`)
-- [ ] T027 Chạy `npm run build` ở `frontend/` (type-check xử lý sự kiện error)
+- [ ] T024 [P] (⚠ guard chặn ghi .env* — cần dán tay) Cập nhật `backend/.env.example` liệt kê biến mới (VN_LEGAL_CHAT_PROVIDER, EMBEDDING_PROVIDER, CLAUDE_API_KEY, CLAUDE_MODEL, CLAUDE_TIMEOUT)
+- [X] T025 [P] Cập nhật `docs/architecture.md`: lớp provider abstraction + sự kiện SSE `error`
+- [X] T026 Chạy `uv run ruff check .` và kiểm tra coverage ≥ 80% (`uv run pytest --cov`)
+- [X] T027 Chạy `npm run build` ở `frontend/` (type-check xử lý sự kiện error)
 
 ---
 

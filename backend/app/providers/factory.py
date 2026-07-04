@@ -24,8 +24,19 @@ def get_chat_provider() -> ChatProvider:
     if name == "ollama":
         _log_once("chat:ollama", f"Chat provider: ollama (model={settings.llm_model})")
         return OllamaChatProvider()
+    if name == "claude":
+        if not settings.claude_api_key:
+            raise ValueError(
+                "chat_provider='claude' nhưng thiếu VN_LEGAL_CLAUDE_API_KEY "
+                "(đặt qua biến môi trường)."
+            )
+        # Log tên provider + model, KHÔNG log key.
+        _log_once("chat:claude", f"Chat provider: claude (model={settings.claude_model})")
+        from app.providers.claude import ClaudeChatProvider
+
+        return ClaudeChatProvider()
     raise ValueError(
-        f"chat_provider không hợp lệ: {name!r}. Giá trị hợp lệ: ollama"
+        f"chat_provider không hợp lệ: {name!r}. Giá trị hợp lệ: ollama, claude"
     )
 
 

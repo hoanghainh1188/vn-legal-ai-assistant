@@ -42,6 +42,15 @@ export function useStreamQuery() {
           case "done":
             setState((prev) => ({ ...prev, status: "done" }));
             break;
+          case "error":
+            // Lỗi giữa chừng stream: đánh dấu lỗi, KHÔNG coi phần đã nhận là
+            // câu trả lời hoàn chỉnh.
+            setState((prev) => ({
+              ...prev,
+              status: "error",
+              error: event.data,
+            }));
+            break;
         }
       }
     } catch (err) {

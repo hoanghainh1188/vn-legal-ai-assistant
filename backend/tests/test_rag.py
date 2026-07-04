@@ -1,10 +1,8 @@
 """Tests for RAG pipeline and vector store."""
 
+import json
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
-from app.models.schemas import SourceDocument
 from app.prompts.system import SYSTEM_PROMPT, build_prompt
 
 
@@ -34,8 +32,8 @@ class TestVectorStore:
                     "documents": [["content 1", "content 2"]],
                     "metadatas": [
                         [
-                            {"article_number": 8, "article_title": "Title 8", "document_id": "doc1"},
-                            {"article_number": 9, "article_title": "Title 9", "document_id": "doc1"},
+                            {"article_number": 8, "article_title": "T8", "document_id": "doc1"},
+                            {"article_number": 9, "article_title": "T9", "document_id": "doc1"},
                         ]
                     ],
                     "distances": [[0.1, 0.2]],
@@ -73,7 +71,7 @@ class TestHybridRetrieval:
             self._metas = [
                 {"article_number": 1, "article_title": "Sở hữu nhà ở", "document_id": "doc"},
                 {"article_number": 2, "article_title": "Giao dịch nhà ở", "document_id": "doc"},
-                {"article_number": 58, "article_title": "Thời hạn sử dụng nhà chung cư", "document_id": "doc"},
+                {"article_number": 58, "article_title": "Thời hạn chung cư", "document_id": "doc"},
             ]
             self._embs = [[1.0, 0.0], [0.9, 0.1], [0.0, 1.0]]
 
@@ -87,7 +85,9 @@ class TestHybridRetrieval:
 
         def query(self, query_embeddings=None, n_results=None, include=None):
             # Dense ranking favours a/b, ranks the keyword target last.
-            return {"ids": [["a", "b", "target"][:n_results]], "distances": [[0.1, 0.2, 0.9][:n_results]]}
+            ids = ["a", "b", "target"][:n_results]
+            dist = [0.1, 0.2, 0.9][:n_results]
+            return {"ids": [ids], "distances": [dist]}
 
     def test_lexical_match_surfaces_low_dense_rank(self) -> None:
         from app.services.vector_store import query_hybrid
@@ -109,3 +109,66 @@ class TestHybridRetrieval:
                 return {"ids": [], "documents": [], "metadatas": [], "embeddings": []}
 
         assert query_hybrid(Empty(), [0.1, 0.2], "bất kỳ", top_k=5) == []
+
+
+class TestSearchStreamMidStreamError:
+    """FR-011: provider lỗi sau khi đã stream một phần → phát SSE 'error', không 'done'."""
+
+    async def test_emits_error_event_no_done(self) -> None:
+        class _FailProvider:
+            async def stream(self, system_prompt, user_message):
+                yield "phần "
+                raise RuntimeError("boom giữa chừng")
+
+        with (
+            patch("app.services.rag.factory") as mock_factory,
+            patch("app.services.rag.vector_store") as mock_vs,
+        ):
+            emb = mock_factory.get_embedding_provider.return_value
+            emb.embed_text = AsyncMock(return_value=[0.1, 0.2])
+            mock_vs.get_client.return_value = object()
+            mock_vs.get_collection.return_value = object()
+            mock_vs.query_hybrid.return_value = []
+            mock_factory.get_chat_provider.return_value = _FailProvider()
+
+            from app.services import rag
+
+            events = [e async for e in rag.search_stream("câu hỏi")]
+
+        types = [json.loads(e[len("data: "):])["type"] for e in events]
+        assert "token" in types  # đã stream một phần trước khi lỗi
+        assert "error" in types  # có sự kiện error
+        assert "done" not in types  # KHÔNG phát done
+
+
+class TestSearchStreamCustomProvider:
+    """US3: một ChatProvider mới (fake) qua factory được rag dùng mà KHÔNG cần
+    sửa mã orchestration."""
+
+    async def test_uses_custom_chat_provider(self) -> None:
+        class _FakeProvider:
+            async def stream(self, system_prompt, user_message):
+                yield "Câu "
+                yield "trả lời"
+
+        with (
+            patch("app.services.rag.factory") as mock_factory,
+            patch("app.services.rag.vector_store") as mock_vs,
+        ):
+            mock_factory.get_embedding_provider.return_value.embed_text = AsyncMock(
+                return_value=[0.1]
+            )
+            mock_vs.get_client.return_value = object()
+            mock_vs.get_collection.return_value = object()
+            mock_vs.query_hybrid.return_value = []
+            mock_factory.get_chat_provider.return_value = _FakeProvider()
+
+            from app.services import rag
+
+            events = [e async for e in rag.search_stream("q")]
+
+        parsed = [json.loads(e[len("data: "):]) for e in events]
+        tokens = "".join(p["data"] for p in parsed if p["type"] == "token")
+        types = [p["type"] for p in parsed]
+        assert tokens == "Câu trả lời"
+        assert "done" in types

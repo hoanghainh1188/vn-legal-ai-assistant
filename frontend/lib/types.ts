@@ -9,7 +9,8 @@ export interface SourceDocument {
 export type RAGEvent =
   | { type: "sources"; data: SourceDocument[] }
   | { type: "token"; data: string }
-  | { type: "done"; data: string };
+  | { type: "done"; data: string }
+  | { type: "error"; data: string };
 
 export interface SearchState {
   status: "idle" | "loading" | "streaming" | "done" | "error";

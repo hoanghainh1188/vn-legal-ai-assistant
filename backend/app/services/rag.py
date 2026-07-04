@@ -1,6 +1,7 @@
 """RAG orchestration — retrieve relevant chunks then stream LLM answer."""
 
 import json
+import logging
 from collections.abc import AsyncIterator
 
 from app.config import settings
@@ -8,6 +9,8 @@ from app.models.schemas import SourceDocument
 from app.prompts.system import SYSTEM_PROMPT, build_prompt
 from app.providers import factory
 from app.services import vector_store
+
+logger = logging.getLogger(__name__)
 
 
 async def search_stream(query: str) -> AsyncIterator[str]:
@@ -30,9 +33,21 @@ async def search_stream(query: str) -> AsyncIterator[str]:
     user_message = build_prompt(context, query)
 
     chat_provider = factory.get_chat_provider()
-    async for token in chat_provider.stream(SYSTEM_PROMPT, user_message):
-        token_event = {"type": "token", "data": token}
-        yield f"data: {json.dumps(token_event, ensure_ascii=False)}\n\n"
+    try:
+        async for token in chat_provider.stream(SYSTEM_PROMPT, user_message):
+            token_event = {"type": "token", "data": token}
+            yield f"data: {json.dumps(token_event, ensure_ascii=False)}\n\n"
+    except Exception:
+        # Lỗi giữa chừng stream (FR-011): phát sự kiện 'error' và dừng — KHÔNG
+        # phát 'done' để client không coi phần dở là câu trả lời hoàn chỉnh.
+        # Không lộ chi tiết lỗi nhạy cảm cho người dùng.
+        logger.exception("Lỗi khi streaming câu trả lời từ chat provider")
+        error_event = {
+            "type": "error",
+            "data": "Đã xảy ra lỗi khi tạo câu trả lời. Vui lòng thử lại.",
+        }
+        yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
+        return
 
     done_event = {"type": "done", "data": ""}
     yield f"data: {json.dumps(done_event, ensure_ascii=False)}\n\n"

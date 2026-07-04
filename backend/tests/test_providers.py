@@ -1,4 +1,6 @@
-"""Tests cho lớp provider abstraction (factory + Ollama providers)."""
+"""Tests cho lớp provider abstraction (factory + Ollama/Claude providers)."""
+
+import logging
 
 import httpx
 import pytest
@@ -28,6 +30,26 @@ class TestFactoryDefaults:
         monkeypatch.setattr(settings, "embedding_provider", "bogus")
         with pytest.raises(ValueError, match="embedding_provider"):
             factory.get_embedding_provider()
+
+
+class TestClaudeSelection:
+    def test_claude_without_key_raises_clearly(self, monkeypatch) -> None:
+        monkeypatch.setattr(settings, "chat_provider", "claude")
+        monkeypatch.setattr(settings, "claude_api_key", None)
+        with pytest.raises(ValueError, match="CLAUDE_API_KEY"):
+            factory.get_chat_provider()
+
+    def test_key_not_logged(self, monkeypatch, caplog) -> None:
+        monkeypatch.setattr(settings, "chat_provider", "claude")
+        monkeypatch.setattr(settings, "claude_api_key", "sk-secret-xyz")
+        factory._logged.clear()  # buộc log lại để kiểm tra nội dung
+        with caplog.at_level(logging.INFO):
+            provider = factory.get_chat_provider()
+        from app.providers.claude import ClaudeChatProvider
+
+        assert isinstance(provider, ClaudeChatProvider)
+        assert "sk-secret-xyz" not in caplog.text  # KHÔNG lộ key
+        assert "claude" in caplog.text.lower()  # có log tên provider
 
 
 class TestOllamaEmbedding:

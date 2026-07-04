@@ -37,3 +37,10 @@ class SearchTokenEvent(BaseModel):
 class SearchDoneEvent(BaseModel):
     type: str = "done"
     data: str = ""
+
+
+class SearchErrorEvent(BaseModel):
+    """Phát khi provider lỗi giữa chừng stream (FR-011)."""
+
+    type: str = "error"
+    data: str

@@ -35,3 +35,8 @@ backend/chroma_data/
 # - .specify/          (constitution + template)
 # - .claude/agents/    (subagent config)
 # - .claude/commands/  (slash command)
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     claude_api_key: str | None = None  # từ env, KHÔNG hardcode
     claude_model: str = "claude-sonnet-4-6"
     claude_timeout: float = 300.0
+    claude_max_tokens: int = 4096  # Anthropic API yêu cầu max_tokens
 
     model_config = {"env_prefix": "VN_LEGAL_", "env_file": ".env"}
 
