@@ -1,8 +1,8 @@
-"""One-command ingestion: source HTML → clean text → chunk → embed → ChromaDB.
+"""One-command ingestion: source HTML → clean text → chunk → embed → Postgres+pgvector.
 
-Runs the whole corpus declared in `sources.py`. Idempotent — resets the
-collection first, then rebuilds. If a source's HTML is present it is
-re-parsed into `data/raw/*.txt`; otherwise the existing .txt is used.
+Runs the whole corpus declared in `sources.py`. Idempotent — áp schema rồi upsert
+theo khoá (document_id, article_number), chạy lại không nhân bản. Nếu HTML của một
+nguồn có sẵn thì re-parse vào `data/raw/*.txt`; nếu không thì dùng .txt hiện có.
 
     uv run python scripts/ingest.py
 """
@@ -13,13 +13,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.config import settings
-from app.models.schemas import LegalChunk as AppChunk
+from app.db import repository
+from app.db.connection import close_pool
+from app.db.repository import ChunkRow
 from app.providers import factory
-from app.services import vector_store
 from scripts.chunk_legal_text import chunk_legal_text
 from scripts.fetch_sources import ensure_html
 from scripts.html_to_legal_text import html_to_legal_text
+from scripts.init_db import apply_schema
 from scripts.sources import SOURCES, LegalSource
 
 BASE = Path(__file__).resolve().parent.parent
@@ -35,19 +36,15 @@ def build_text(source: LegalSource) -> str:
     return text
 
 
-async def ingest_source(
-    source: LegalSource, collection: vector_store.chromadb.Collection
-) -> int:
+async def ingest_source(source: LegalSource, repo: repository.VectorRepository) -> int:
     print(f"• {source.name} ({source.document_id})")
     text = build_text(source)
     chunks = chunk_legal_text(text, source.document_id)
     print(f"    parsed {len(chunks)} articles, embedding ...")
 
-    embeddings = await factory.get_embedding_provider().embed_texts(
-        [c.content for c in chunks]
-    )
-    app_chunks = [
-        AppChunk(
+    embeddings = await factory.get_embedding_provider().embed_texts([c.content for c in chunks])
+    rows = [
+        ChunkRow(
             article_number=c.article_number,
             article_title=c.article_title,
             document_id=c.document_id,
@@ -56,24 +53,20 @@ async def ingest_source(
         )
         for c in chunks
     ]
-    vector_store.add_chunks(collection, app_chunks, embeddings)
+    await repo.upsert_chunks(rows, embeddings)
     print(f"    stored {len(chunks)} chunks")
     return len(chunks)
 
 
 async def main() -> None:
-    client = vector_store.get_client()
-    # Reset for a clean, reproducible rebuild (also handles embedding-dim changes).
-    try:
-        client.delete_collection(settings.collection_name)
-    except Exception:
-        pass
-    collection = vector_store.get_collection(client)
+    await apply_schema()  # idempotent — bảo đảm bảng + index tồn tại
+    repo = repository.get_vector_repository()
 
     total = 0
     for source in SOURCES:
-        total += await ingest_source(source, collection)
+        total += await ingest_source(source, repo)
 
+    await close_pool()
     print(f"\nIngestion complete — {total} chunks from {len(SOURCES)} documents.")
 
 

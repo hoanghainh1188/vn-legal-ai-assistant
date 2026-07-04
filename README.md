@@ -21,7 +21,7 @@ Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (Luật số 27/2023/
 | Tầng | Công nghệ |
 |------|-----------|
 | Frontend | Next.js 14 (App Router), Tailwind CSS, react-markdown, Lucide Icons |
-| Backend | Python 3.12, FastAPI, ChromaDB (vector DB local) |
+| Backend | Python 3.12, FastAPI, Postgres + pgvector (kho vector, local qua Docker) |
 | AI | Ollama — `qwen3.5` (chat), `bge-m3` (embedding, 1024-dim) |
 | Retrieval | Hybrid: dense (vector) + lexical BM25-lite, fusion RRF |
 | Package managers | `uv` (Python), `npm` (Node) |
@@ -30,6 +30,7 @@ Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (Luật số 27/2023/
 
 - Python 3.12, [`uv`](https://github.com/astral-sh/uv)
 - Node.js 18+, npm
+- Docker (Postgres + pgvector cục bộ)
 - [Ollama](https://ollama.com) đang chạy, đã pull 2 model:
 
 ```bash
@@ -40,7 +41,11 @@ ollama pull bge-m3
 ## Cài đặt & chạy
 
 ```bash
-# 1. Nạp dữ liệu vào ChromaDB (chạy 1 lần — tự fetch toàn văn từ API Bộ Tư pháp)
+# 0. Khởi Postgres + pgvector (local) và đặt biến kết nối
+docker compose up -d db
+export VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/vn_legal
+
+# 1. Nạp dữ liệu vào Postgres (chạy 1 lần — tự áp schema + fetch toàn văn từ API Bộ Tư pháp)
 cd backend
 uv run python scripts/ingest.py
 
@@ -56,12 +61,12 @@ npm run dev
 Mở http://localhost:3000 và bắt đầu tra cứu.
 
 > **Lưu ý:** bước ingest (Pha 1) chỉ chạy khi cài đặt hoặc cập nhật dữ liệu. Khi search
-> (Pha 2), ứng dụng **không** truy cập internet — chỉ đọc ChromaDB local + Ollama local.
+> (Pha 2), ứng dụng **không** truy cập internet — chỉ đọc Postgres + pgvector + Ollama local.
 
 ## Cách hoạt động (RAG)
 
 ```
-Câu hỏi → embed (bge-m3) → hybrid retrieval (ChromaDB) → top-8 điều liên quan
+Câu hỏi → embed (bge-m3) → hybrid retrieval (Postgres+pgvector) → top-8 điều liên quan
        → prompt (chống bịa) → qwen3.5 streaming → câu trả lời + trích dẫn
 ```
 
@@ -85,23 +90,28 @@ cần tải thủ công.
 ```
 backend/
 ├── app/
-│   ├── main.py              # FastAPI app + CORS
-│   ├── config.py            # Settings (model, ChromaDB, top_k...)
+│   ├── main.py              # FastAPI app + CORS + lifespan (đóng pool)
+│   ├── config.py            # Settings (model, DATABASE_URL, top_k...)
+│   ├── db/                  # Kho vector Postgres+pgvector
+│   │   ├── connection.py    # Pool psycopg3 async + đăng ký pgvector
+│   │   ├── repository.py    # VectorRepository (seam) + PgVectorRepository
+│   │   └── schema.sql       # legal_chunks + index HNSW cosine
 │   ├── routers/query.py     # POST /api/query (SSE)
+│   ├── providers/           # Abstraction LLM/embedding (Ollama/Claude)
 │   ├── services/
-│   │   ├── rag.py           # Điều phối RAG
-│   │   ├── vector_store.py  # ChromaDB + hybrid retrieval
-│   │   └── llm.py           # Ollama embed + chat streaming
+│   │   ├── rag.py           # Điều phối RAG (repository → hybrid_rank → stream)
+│   │   └── vector_store.py  # hybrid_rank — hàm thuần dense + lexical RRF
 │   └── prompts/system.py    # System prompt chống hallucination
 ├── scripts/
 │   ├── sources.py           # Manifest tài liệu (vbpl_id)
 │   ├── fetch_sources.py     # Fetch toàn văn từ API MOJ
 │   ├── html_to_legal_text.py# HTML → text sạch (bỏ mục lục)
 │   ├── chunk_legal_text.py  # Tách theo "Điều"
-│   └── ingest.py            # 1 lệnh: fetch → chunk → embed → store
+│   ├── init_db.py           # Áp schema.sql (idempotent)
+│   └── ingest.py            # 1 lệnh: schema → fetch → chunk → embed → upsert
 ├── data/raw_html/           # Cache HTML nguồn (fetch từ API)
 ├── data/raw/                # Text đã xử lý (đầu vào ingest)
-└── tests/                   # 27 unit + integration tests
+└── tests/                   # unit (không cần DB) + integration (cần Postgres)
 
 frontend/
 ├── app/                     # page.tsx, layout, api/query proxy

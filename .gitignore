@@ -19,9 +19,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
-# ChromaDB
-chroma_data/
-backend/chroma_data/
+# Local Postgres (Docker volume is managed by compose; nothing to ignore here)
 
 # Data: processed legal text (backend/data/raw/*.txt) and source HTML
 # (backend/data/raw_html/) ARE committed — they are the ingestion input and

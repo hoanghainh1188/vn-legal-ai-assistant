@@ -28,7 +28,7 @@ npm run build                 # build + type-check
 
 Đảm bảo:
 - Test pass (đặc biệt 3 test case gốc: chung cư, việt kiều, câu hỏi ngoài phạm vi)
-- Không hardcode secret; không commit `.env*`, `chroma_data/`, `node_modules/`
+- Không hardcode secret; không commit `.env*`, `node_modules/`
 
 ## Nguyên tắc thay đổi
 

@@ -1,15 +1,4 @@
-from dataclasses import dataclass
-
 from pydantic import BaseModel, Field
-
-
-@dataclass(frozen=True)
-class LegalChunk:
-    article_number: int
-    article_title: str
-    document_id: str
-    chapter: str
-    content: str
 
 
 class SearchRequest(BaseModel):

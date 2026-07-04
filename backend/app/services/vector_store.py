@@ -1,19 +1,59 @@
-"""ChromaDB vector store operations."""
+"""Hybrid retrieval — hàm THUẦN trên rows (không phụ thuộc kho lưu trữ).
+
+Tầng dữ liệu (Postgres+pgvector) nằm ở `app.db.repository`; ở đây chỉ hợp nhất
+dense + lexical rồi dựng `SourceDocument`. Thuần → test được không cần DB.
+"""
 
 import math
 import re
 
-import chromadb
-
-from app.config import settings
-from app.models.schemas import LegalChunk, SourceDocument
+from app.db.repository import RetrievedRow
+from app.models.schemas import SourceDocument
 
 # Common Vietnamese function words that carry little retrieval signal.
 _STOPWORDS = {
-    "có", "và", "của", "là", "được", "cho", "các", "một", "này", "đó", "khi",
-    "về", "theo", "trong", "tại", "bao", "nhiêu", "tối", "đa", "không", "với",
-    "thì", "mà", "hay", "hoặc", "những", "đến", "từ", "ra", "vào", "phải",
-    "sẽ", "đã", "bị", "như", "để", "nếu", "còn", "gì", "ai", "nào", "thế",
+    "có",
+    "và",
+    "của",
+    "là",
+    "được",
+    "cho",
+    "các",
+    "một",
+    "này",
+    "đó",
+    "khi",
+    "về",
+    "theo",
+    "trong",
+    "tại",
+    "bao",
+    "nhiêu",
+    "tối",
+    "đa",
+    "không",
+    "với",
+    "thì",
+    "mà",
+    "hay",
+    "hoặc",
+    "những",
+    "đến",
+    "từ",
+    "ra",
+    "vào",
+    "phải",
+    "sẽ",
+    "đã",
+    "bị",
+    "như",
+    "để",
+    "nếu",
+    "còn",
+    "gì",
+    "ai",
+    "nào",
+    "thế",
 }
 
 
@@ -25,72 +65,6 @@ def _keyword_terms(query: str) -> list[str]:
     return [w for w in _tokens(query) if w not in _STOPWORDS]
 
 
-def get_client() -> chromadb.ClientAPI:
-    return chromadb.PersistentClient(path=settings.chroma_persist_dir)
-
-
-def get_collection(client: chromadb.ClientAPI) -> chromadb.Collection:
-    return client.get_or_create_collection(
-        name=settings.collection_name,
-        metadata={"hnsw:space": "cosine"},
-    )
-
-
-def add_chunks(
-    collection: chromadb.Collection,
-    chunks: list[LegalChunk],
-    embeddings: list[list[float]],
-) -> None:
-    collection.upsert(
-        ids=[f"{c.document_id}__dieu_{c.article_number}" for c in chunks],
-        documents=[c.content for c in chunks],
-        embeddings=embeddings,
-        metadatas=[
-            {
-                "article_number": c.article_number,
-                "article_title": c.article_title,
-                "document_id": c.document_id,
-                "chapter": c.chapter,
-            }
-            for c in chunks
-        ],
-    )
-
-
-def query_similar(
-    collection: chromadb.Collection,
-    query_embedding: list[float],
-    top_k: int = 3,
-) -> list[SourceDocument]:
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
-    )
-
-    documents: list[SourceDocument] = []
-    if not results["documents"] or not results["documents"][0]:
-        return documents
-
-    for doc, meta, distance in zip(
-        results["documents"][0],
-        results["metadatas"][0],
-        results["distances"][0],
-        strict=True,
-    ):
-        documents.append(
-            SourceDocument(
-                article_number=meta["article_number"],
-                article_title=meta["article_title"],
-                document_id=meta["document_id"],
-                content=doc,
-                relevance_score=round(1 - distance, 4),
-            )
-        )
-
-    return documents
-
-
 def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=True))
     na = math.sqrt(sum(x * x for x in a))
@@ -98,41 +72,29 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb) if na and nb else 0.0
 
 
-def query_hybrid(
-    collection: chromadb.Collection,
+def hybrid_rank(
     query_embedding: list[float],
     query_text: str,
+    dense: list[RetrievedRow],
+    corpus: list[RetrievedRow],
     top_k: int = 8,
-    vector_pool: int = 30,
     rrf_k: int = 60,
 ) -> list[SourceDocument]:
-    """Hybrid retrieval: fuse dense (vector) and lexical (keyword) rankings.
+    """Hợp nhất dense (vector) và lexical (keyword) rankings.
 
-    nomic-embed-text alone under-ranks Vietnamese articles when the query
-    wording differs from the article's (e.g. "sở hữu" vs "sử dụng"). A keyword
-    pass over titles/content recovers those, and Reciprocal Rank Fusion merges
-    both rankings robustly without tuning weights.
+    bge-m3 vẫn có thể dưới-xếp-hạng điều luật khi câu hỏi dùng từ khác với điều
+    (vd "sở hữu" vs "sử dụng"). Một lượt keyword trên tiêu đề/nội dung khôi phục
+    chúng, và Reciprocal Rank Fusion hợp nhất hai bảng xếp hạng mà không cần chỉnh
+    trọng số.
+
+    - ``dense``: ứng viên theo cosine (đã sắp), lấy thứ tự dense.
+    - ``corpus``: toàn bộ rows (để tính IDF/lexical + tra cứu theo id).
     """
-    everything = collection.get(include=["documents", "metadatas", "embeddings"])
-    ids = everything["ids"]
-    if not ids:
+    by_id = {row.id: row for row in corpus}
+    if not by_id:
         return []
 
-    docs = everything["documents"]
-    metas = everything["metadatas"]
-    embeddings = everything["embeddings"]
-    by_id = {
-        cid: (doc, meta, emb)
-        for cid, doc, meta, emb in zip(ids, docs, metas, embeddings, strict=True)
-    }
-
-    # Dense ranking from ChromaDB.
-    vector_results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=min(vector_pool, len(ids)),
-        include=["distances"],
-    )
-    vector_order = vector_results["ids"][0] if vector_results["ids"] else []
+    vector_order = [row.id for row in dense]
 
     # Lexical ranking (BM25-lite): IDF-weight terms so a discriminative match
     # like "chung cư" counts far more than ubiquitous words like "sở"/"hữu",
@@ -144,9 +106,9 @@ def query_hybrid(
         doc_freq: dict[str, int] = {}
         title_of: dict[str, str] = {}
         body_of: dict[str, str] = {}
-        for cid, (doc, meta, _emb) in by_id.items():
-            title_of[cid] = str(meta.get("article_title", "")).lower()
-            body_of[cid] = doc.lower()
+        for cid, row in by_id.items():
+            title_of[cid] = row.article_title.lower()
+            body_of[cid] = row.content.lower()
             haystack = title_of[cid] + " " + body_of[cid]
             for t in set(terms):
                 if t in haystack:
@@ -175,9 +137,9 @@ def query_hybrid(
 
     fused_order = sorted(fused, key=fused.get, reverse=True)
 
-    # Guarantee the strongest lexical (title keyword) matches are always
-    # present: the dense model under-ranks Vietnamese articles whose wording
-    # differs from the query, but a title match is a highly reliable signal.
+    # Guarantee the strongest lexical (title keyword) matches are always present:
+    # the dense model under-ranks Vietnamese articles whose wording differs from
+    # the query, but a title match is a highly reliable signal.
     reserved = max(0, top_k // 2 - 1)
     lexical_top = lexical_order[:reserved]
     top_ids: list[str] = []
@@ -189,14 +151,14 @@ def query_hybrid(
 
     documents: list[SourceDocument] = []
     for cid in top_ids:
-        doc, meta, emb = by_id[cid]
+        row = by_id[cid]
         documents.append(
             SourceDocument(
-                article_number=meta["article_number"],
-                article_title=meta["article_title"],
-                document_id=meta["document_id"],
-                content=doc,
-                relevance_score=round(_cosine(query_embedding, emb), 4),
+                article_number=row.article_number,
+                article_title=row.article_title,
+                document_id=row.document_id,
+                content=row.content,
+                relevance_score=round(_cosine(query_embedding, row.embedding), 4),
             )
         )
     # Present most semantically relevant first — leads both the "Cơ sở pháp lý"

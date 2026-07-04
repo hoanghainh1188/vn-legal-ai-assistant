@@ -5,6 +5,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from app.config import settings
+from app.db import repository
 from app.models.schemas import SourceDocument
 from app.prompts.system import SYSTEM_PROMPT, build_prompt
 from app.providers import factory
@@ -17,10 +18,11 @@ async def search_stream(query: str) -> AsyncIterator[str]:
     embedding_provider = factory.get_embedding_provider()
     query_embedding = await embedding_provider.embed_text(query)
 
-    client = vector_store.get_client()
-    collection = vector_store.get_collection(client)
-    sources = vector_store.query_hybrid(
-        collection, query_embedding, query, top_k=settings.retrieval_top_k
+    repo = repository.get_vector_repository()
+    dense = await repo.dense_candidates(query_embedding, settings.vector_pool)
+    corpus = await repo.all_rows()
+    sources = vector_store.hybrid_rank(
+        query_embedding, query, dense, corpus, top_k=settings.retrieval_top_k
     )
 
     sources_event = {
