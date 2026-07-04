@@ -39,11 +39,13 @@ async def search_stream(query: str) -> AsyncIterator[str]:
         async for token in chat_provider.stream(SYSTEM_PROMPT, user_message):
             token_event = {"type": "token", "data": token}
             yield f"data: {json.dumps(token_event, ensure_ascii=False)}\n\n"
-    except Exception:
+    except Exception as exc:
         # Lỗi giữa chừng stream (FR-011): phát sự kiện 'error' và dừng — KHÔNG
         # phát 'done' để client không coi phần dở là câu trả lời hoàn chỉnh.
         # Không lộ chi tiết lỗi nhạy cảm cho người dùng.
-        logger.exception("Lỗi khi streaming câu trả lời từ chat provider")
+        # Chỉ log loại + thông điệp cắt ngắn (KHÔNG traceback đầy đủ) để tránh lọt
+        # nội dung câu hỏi/PII qua chuỗi exception (Constitution V).
+        logger.error("Lỗi chat provider khi streaming: %s — %s", type(exc).__name__, str(exc)[:200])
         error_event = {
             "type": "error",
             "data": "Đã xảy ra lỗi khi tạo câu trả lời. Vui lòng thử lại.",

@@ -256,3 +256,22 @@ flowchart LR
   kể cả gọi thẳng PostgREST (kiểm bằng test `backend/tests/test_rls_isolation.py`).
 - **Guest**: `saveHistory` bỏ qua khi chưa đăng nhập; tra cứu vẫn hoạt động đầy đủ.
 - **Lịch sử tối thiểu**: `query + created_at + sources` (điều trích) — không lưu toàn văn câu trả lời.
+
+## 8. Vận hành & bảo mật (Pha 4)
+
+Ba lớp bọc quanh app, không đổi hành vi RAG:
+
+- **Rate-limit** (`app/observability/ratelimit.py`): `/api/query` giới hạn theo IP bằng **slowapi**
+  (in-memory, ngưỡng `VN_LEGAL_RATE_LIMIT`, mặc định `30/minute`); vượt → **429**. Kiểm TRƯỚC khi bắt
+  đầu SSE (không đệm stream). `/health`, `/metrics` miễn. (Redis đa-instance để Pha 6.)
+- **Security headers + CSP**:
+  - Backend (`app/observability/security.py`, pure-ASGI): `X-Content-Type-Options: nosniff`,
+    `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`; `HSTS` khi `environment=production`.
+  - Frontend (`next.config.ts`): các header trên + **CSP static** (`connect-src` cho Supabase + same-origin;
+    `frame-ancestors 'none'`…). Dev nới `unsafe-eval`/ws cho HMR; **production chặt**. Siết nonce-based ở Pha 6.
+- **Observability** (`app/observability/`):
+  - **Request ID** + structured **JSON log** mỗi request (`request_id, method, path, status, duration_ms`);
+    KHÔNG log secret/PII (không log toàn văn câu hỏi/email). Header `X-Request-ID` trả về client.
+  - **OpenTelemetry** auto-instrument (`otel.py`) — exporter theo env `OTEL_EXPORTER_OTLP_ENDPOINT`,
+    no-op ở dev. **Prometheus** `/metrics` (prometheus-fastapi-instrumentator) sẵn sàng scrape.
+  - Hạ tầng quan sát thật (Jaeger/Prometheus/Grafana) + HSTS/`X-Forwarded-For` → Pha 6.

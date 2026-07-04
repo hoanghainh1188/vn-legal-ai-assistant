@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     claude_timeout: float = 300.0
     claude_max_tokens: int = 4096  # Anthropic API yêu cầu max_tokens
 
+    # Vận hành (Pha 4)
+    rate_limit: str = "30/minute"  # ngưỡng /api/query theo IP (slowapi)
+    log_level: str = "INFO"
+    service_name: str = "vn-legal-backend"  # nhãn OTel
+    environment: str = "development"  # "production" → bật HSTS
+
     model_config = {"env_prefix": "VN_LEGAL_", "env_file": ".env"}
 
 
