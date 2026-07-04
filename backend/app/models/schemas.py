@@ -11,6 +11,10 @@ class SourceDocument(BaseModel):
     document_id: str
     content: str
     relevance_score: float
+    # Metadata hiệu lực CẤP VĂN BẢN (Feature #7) — hiển thị nhãn + cảnh báo ở UI.
+    document_name: str | None = None
+    eff_status: str | None = None
+    eff_date: str | None = None
 
 
 class SearchSourcesEvent(BaseModel):

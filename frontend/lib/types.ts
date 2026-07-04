@@ -4,6 +4,10 @@ export interface SourceDocument {
   document_id: string;
   content: string;
   relevance_score: number;
+  // Metadata hiệu lực cấp văn bản (Feature #7).
+  document_name?: string | null;
+  eff_status?: string | null;
+  eff_date?: string | null;
 }
 
 export type RAGEvent =

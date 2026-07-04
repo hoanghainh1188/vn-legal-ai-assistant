@@ -16,6 +16,10 @@ class LegalSource:
     text: str  # generated plain-text filename in data/raw/
     document_id: str  # official number, used as citation id
     name: str  # human-readable label
+    # Trạng thái hiệu lực CẤP VĂN BẢN (xác minh từ API MOJ, field vbpqTinhTrangHieuLuc/
+    # vbpqNgaycohieuluc). Chỉ cấp văn bản — không suy diễn điều nào bị sửa.
+    eff_status: str  # vd "Hết hiệu lực một phần", "Còn hiệu lực"
+    eff_date: str  # ngày hiệu lực "YYYY-MM-DD"
 
 
 SOURCES: list[LegalSource] = [
@@ -25,6 +29,8 @@ SOURCES: list[LegalSource] = [
         text="luat-nha-o-2023.txt",
         document_id="27/2023/QH15",
         name="Luật Nhà ở 2023",
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2024-08-01",
     ),
     LegalSource(
         vbpl_id=169709,
@@ -32,6 +38,8 @@ SOURCES: list[LegalSource] = [
         text="nghi-dinh-95-2024.txt",
         document_id="95/2024/ND-CP",
         name="Nghị định 95/2024/NĐ-CP",
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2024-08-01",
     ),
     LegalSource(
         vbpl_id=169711,
@@ -39,6 +47,8 @@ SOURCES: list[LegalSource] = [
         text="nghi-dinh-98-2024.txt",
         document_id="98/2024/ND-CP",
         name="Nghị định 98/2024/NĐ-CP",  # cải tạo, xây dựng lại nhà chung cư
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2024-08-01",
     ),
     LegalSource(
         vbpl_id=169712,
@@ -46,6 +56,8 @@ SOURCES: list[LegalSource] = [
         text="nghi-dinh-100-2024.txt",
         document_id="100/2024/ND-CP",
         name="Nghị định 100/2024/NĐ-CP",  # phát triển & quản lý nhà ở xã hội
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2024-08-01",
     ),
     LegalSource(
         vbpl_id=169122,
@@ -53,5 +65,7 @@ SOURCES: list[LegalSource] = [
         text="thong-tu-05-2024-bxd.txt",
         document_id="05/2024/TT-BXD",
         name="Thông tư 05/2024/TT-BXD",  # quy định chi tiết một số điều của Luật Nhà ở
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2024-08-01",
     ),
 ]

@@ -159,6 +159,9 @@ def hybrid_rank(
                 document_id=row.document_id,
                 content=row.content,
                 relevance_score=round(_cosine(query_embedding, row.embedding), 4),
+                document_name=row.document_name,
+                eff_status=row.eff_status,
+                eff_date=row.eff_date,
             )
         )
     # Present most semantically relevant first — leads both the "Cơ sở pháp lý"

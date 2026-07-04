@@ -72,3 +72,28 @@ class TestHybridRank:
         assert scores == sorted(scores, reverse=True)
         # Trả về đúng cấu trúc SourceDocument (không có field chapter — không đổi hợp đồng).
         assert results[0].article_number in {1, 2, 58}
+
+    def test_carries_document_effective_metadata(self) -> None:
+        # Feature #7: hybrid_rank PHẢI mang tên văn bản + trạng thái hiệu lực sang SourceDocument.
+        row = RetrievedRow(
+            "27/2023/QH15__dieu_58",
+            58,
+            "Thời hạn sử dụng nhà chung cư",
+            "27/2023/QH15",
+            "IV",
+            "Nội dung điều 58.",
+            [0.0, 1.0],
+            document_name="Luật Nhà ở 2023",
+            eff_status="Hết hiệu lực một phần",
+            eff_date="2024-08-01",
+        )
+        results = hybrid_rank(
+            query_embedding=[0.0, 1.0],
+            query_text="thời hạn chung cư",
+            dense=[row],
+            corpus=[row],
+            top_k=1,
+        )
+        assert results[0].document_name == "Luật Nhà ở 2023"
+        assert results[0].eff_status == "Hết hiệu lực một phần"
+        assert results[0].eff_date == "2024-08-01"

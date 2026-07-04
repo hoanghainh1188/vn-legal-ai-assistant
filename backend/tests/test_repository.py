@@ -27,6 +27,9 @@ class TestPgVectorRepository:
             document_id="TEST/2026",
             chapter="I",
             content="Nội dung điều kiểm thử pgvector.",
+            document_name="Văn bản kiểm thử",
+            eff_status="Hết hiệu lực một phần",
+            eff_date="2024-08-01",
         )
         emb = [0.01] * 1024
 
@@ -39,6 +42,10 @@ class TestPgVectorRepository:
             dense = await repo.dense_candidates(emb, limit=1)
             assert dense
             assert dense[0].article_number == 9001
+            # Feature #7: metadata hiệu lực round-trip qua DB.
+            assert dense[0].document_name == "Văn bản kiểm thử"
+            assert dense[0].eff_status == "Hết hiệu lực một phần"
+            assert dense[0].eff_date == "2024-08-01"
         finally:
             # Dọn dữ liệu test để không làm bẩn kho thật.
             pool = await get_pool()

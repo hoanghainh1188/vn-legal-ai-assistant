@@ -275,3 +275,14 @@ Ba lớp bọc quanh app, không đổi hành vi RAG:
   - **OpenTelemetry** auto-instrument (`otel.py`) — exporter theo env `OTEL_EXPORTER_OTLP_ENDPOINT`,
     no-op ở dev. **Prometheus** `/metrics` (prometheus-fastapi-instrumentator) sẵn sàng scrape.
   - Hạ tầng quan sát thật (Jaeger/Prometheus/Grafana) + HSTS/`X-Forwarded-For` → Pha 6.
+
+## 9. Độ tin cậy: nhãn hiệu lực cấp văn bản (Feature #7)
+
+Mỗi trích dẫn kèm **trạng thái hiệu lực CẤP VĂN BẢN** (`document_name`, `eff_status`, `eff_date` —
+cột denormalized trong `legal_chunks`, nguồn manifest `sources.py` xác minh từ API MOJ). Frontend
+`LegalReference` hiện tên văn bản đúng loại (Luật/NĐ/TT) + badge trạng thái, và **1 cảnh báo gộp** khi
+có ≥1 trích dẫn thuộc văn bản "hết hiệu lực một phần".
+
+> **Ranh giới (Constitution I)**: chỉ cấp văn bản. API MOJ KHÔNG có dữ liệu cấp điều
+> (`referenceProvisions` rỗng) → tuyệt đối không khẳng định "Điều X đã bị sửa bởi VB Y". Mapping cấp
+> điều / bản hợp nhất VBHN là việc sau khi có nguồn dữ liệu phù hợp.

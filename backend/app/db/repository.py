@@ -26,6 +26,10 @@ class ChunkRow:
     document_id: str
     chapter: str
     content: str
+    # Metadata hiệu lực cấp văn bản (Feature #7); None nếu chưa biết.
+    document_name: str | None = None
+    eff_status: str | None = None
+    eff_date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -40,6 +44,9 @@ class RetrievedRow:
     content: str
     embedding: list[float] = field(default_factory=list)
     similarity: float = 0.0
+    document_name: str | None = None
+    eff_status: str | None = None
+    eff_date: str | None = None
 
 
 @runtime_checkable
@@ -61,19 +68,33 @@ class PgVectorRepository:
     async def upsert_chunks(self, chunks: list[ChunkRow], embeddings: list[list[float]]) -> int:
         pool = await get_pool()
         params = [
-            (c.document_id, c.article_number, c.article_title, c.chapter, c.content, Vector(e))
+            (
+                c.document_id,
+                c.article_number,
+                c.article_title,
+                c.chapter,
+                c.content,
+                c.document_name,
+                c.eff_status,
+                c.eff_date,
+                Vector(e),
+            )
             for c, e in zip(chunks, embeddings, strict=True)
         ]
         async with pool.connection() as conn, conn.cursor() as cur:
             await cur.executemany(
                 """
                 INSERT INTO legal_chunks
-                    (document_id, article_number, article_title, chapter, content, embedding)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (document_id, article_number, article_title, chapter, content,
+                     document_name, eff_status, eff_date, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (document_id, article_number) DO UPDATE SET
                     article_title = EXCLUDED.article_title,
                     chapter       = EXCLUDED.chapter,
                     content       = EXCLUDED.content,
+                    document_name = EXCLUDED.document_name,
+                    eff_status    = EXCLUDED.eff_status,
+                    eff_date      = EXCLUDED.eff_date,
                     embedding     = EXCLUDED.embedding
                 """,
                 params,
@@ -89,6 +110,7 @@ class PgVectorRepository:
             await cur.execute(
                 """
                 SELECT document_id, article_number, article_title, chapter, content,
+                       document_name, eff_status, eff_date,
                        embedding, 1 - (embedding <=> %s) AS similarity
                 FROM legal_chunks
                 ORDER BY embedding <=> %s
@@ -104,7 +126,8 @@ class PgVectorRepository:
         async with pool.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
-                SELECT document_id, article_number, article_title, chapter, content, embedding
+                SELECT document_id, article_number, article_title, chapter, content,
+                       document_name, eff_status, eff_date, embedding
                 FROM legal_chunks
                 """
             )
@@ -120,8 +143,18 @@ class PgVectorRepository:
 
     @staticmethod
     def _to_row(record: tuple, *, has_similarity: bool) -> RetrievedRow:
-        document_id, article_number, article_title, chapter, content, embedding = record[:6]
-        similarity = float(record[6]) if has_similarity else 0.0
+        (
+            document_id,
+            article_number,
+            article_title,
+            chapter,
+            content,
+            document_name,
+            eff_status,
+            eff_date,
+            embedding,
+        ) = record[:9]
+        similarity = float(record[9]) if has_similarity else 0.0
         return RetrievedRow(
             id=_synth_id(document_id, article_number),
             article_number=article_number,
@@ -131,6 +164,9 @@ class PgVectorRepository:
             content=content,
             embedding=[float(x) for x in embedding],
             similarity=similarity,
+            document_name=document_name,
+            eff_status=eff_status,
+            eff_date=eff_date.isoformat() if eff_date is not None else None,
         )
 
 

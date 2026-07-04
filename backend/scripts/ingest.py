@@ -50,6 +50,9 @@ async def ingest_source(source: LegalSource, repo: repository.VectorRepository) 
             document_id=c.document_id,
             chapter=c.chapter,
             content=c.content,
+            document_name=source.name,
+            eff_status=source.eff_status,
+            eff_date=source.eff_date,
         )
         for c in chunks
     ]
