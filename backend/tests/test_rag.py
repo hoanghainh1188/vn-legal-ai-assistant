@@ -20,6 +20,12 @@ class TestSystemPrompt:
     def test_system_prompt_in_vietnamese(self) -> None:
         assert "trợ lý pháp lý" in SYSTEM_PROMPT
 
+    def test_system_prompt_declares_full_corpus_scope(self) -> None:
+        # Bắt phạm vi lỗi thời: prompt phải liệt kê đủ các văn bản trong corpus
+        # (Constitution I) — thêm văn bản mà quên cập nhật prompt sẽ đỏ ở đây.
+        for doc in ("27/2023/QH15", "95/2024", "98/2024", "100/2024", "05/2024/TT-BXD"):
+            assert doc in SYSTEM_PROMPT
+
     def test_build_prompt_includes_context_and_query(self) -> None:
         prompt = build_prompt("Điều 8 content", "Việt kiều mua nhà?")
         assert "Điều 8 content" in prompt

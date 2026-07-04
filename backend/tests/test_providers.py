@@ -70,3 +70,51 @@ class TestOllamaEmbedding:
 
         assert result == [0.1, 0.2, 0.3]
         assert len(captured["prompt"]) == settings.max_embed_chars
+
+    @respx.mock
+    async def test_embed_text_retries_shorter_on_500(self) -> None:
+        """Điều tiếng Việt dày đặc vượt token dù đã cắt ký tự → Ollama 500. Provider
+        PHẢI thử lại với độ dài ngắn hơn để vẫn embed được (Pha 7)."""
+        import json
+
+        lengths: list[int] = []
+
+        def _handler(request: httpx.Request) -> httpx.Response:
+            n = len(json.loads(request.content)["prompt"])
+            lengths.append(n)
+            # Lần đầu (độ dài đầy đủ) trả 500; lần sau (ngắn hơn) trả 200.
+            if n >= settings.max_embed_chars:
+                return httpx.Response(500, json={"error": "input too long"})
+            return httpx.Response(200, json={"embedding": [0.9]})
+
+        respx.post(f"{settings.ollama_base_url}/api/embeddings").mock(side_effect=_handler)
+
+        result = await OllamaEmbeddingProvider().embed_text("y" * (settings.max_embed_chars + 5000))
+
+        assert result == [0.9]
+        assert lengths[0] == settings.max_embed_chars  # thử độ dài đầy đủ trước
+        assert lengths[-1] < settings.max_embed_chars  # rồi lùi ngắn hơn
+
+    @respx.mock
+    async def test_embed_text_raises_when_all_retries_fail(self) -> None:
+        """Nếu mọi độ dài đều 500 → PHẢI raise (không nuốt lỗi)."""
+        respx.post(f"{settings.ollama_base_url}/api/embeddings").mock(
+            return_value=httpx.Response(500, json={"error": "boom"})
+        )
+        with pytest.raises(httpx.HTTPStatusError):
+            await OllamaEmbeddingProvider().embed_text("z" * (settings.max_embed_chars + 5000))
+
+    @respx.mock
+    async def test_embed_text_non_500_raises_immediately(self) -> None:
+        """Lỗi khác 500 (vd 503 Ollama down) → raise ngay, KHÔNG retry ngắn hơn."""
+        calls = {"n": 0}
+
+        def _handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(503, json={"error": "unavailable"})
+
+        respx.post(f"{settings.ollama_base_url}/api/embeddings").mock(side_effect=_handler)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await OllamaEmbeddingProvider().embed_text("w" * (settings.max_embed_chars + 5000))
+        assert calls["n"] == 1  # không thử lại

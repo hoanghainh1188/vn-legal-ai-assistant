@@ -6,9 +6,10 @@
 
 ## Tổng quan
 
-PoC tra cứu pháp luật Việt Nam bằng RAG (Retrieval-Augmented Generation), phạm vi:
-**Luật Nhà ở 2023 (27/2023/QH15)** và **Nghị định 95/2024/NĐ-CP**. Đối tượng: người dân
-phổ thông. Toàn bộ AI chạy **local qua Ollama** — không gọi API bên ngoài.
+Tra cứu pháp luật Việt Nam bằng RAG (Retrieval-Augmented Generation), phạm vi: **Luật Nhà ở
+2023 (27/2023/QH15)** + bộ văn bản quy định chi tiết (NĐ 95, 98, 100/2024 và TT 05/2024/TT-BXD).
+Đối tượng: người dân phổ thông. AI embedding/chat chạy **local qua Ollama** (chat có thể chuyển
+Claude API qua config).
 
 | Tầng | Công nghệ | Cổng |
 |------|-----------|------|
@@ -51,7 +52,7 @@ graph TB
         QWEN["qwen3.5 (chat LLM)"]
     end
 
-    PG[("Postgres + pgvector<br/>legal_chunks — 293 chunks")]
+    PG[("Postgres + pgvector<br/>legal_chunks — 440 chunks")]
 
     Proxy -->|"POST + SSE stream"| Router
     Repo --> PG
@@ -82,7 +83,7 @@ flowchart LR
 — tự động áp schema (idempotent), **fetch toàn văn từ API Bộ Tư pháp** (nếu chưa có cache),
 parse → chunk → embed → **upsert** vào Postgres cho **mọi** tài liệu trong `scripts/sources.py`.
 Upsert theo khoá `(document_id, article_number)` nên chạy lại không nhân bản. Kết quả:
-198 điều (Luật) + 95 điều (Nghị định) = **293 chunks**.
+198 (Luật) + 95 (NĐ 95) + 48 (NĐ 98) + 78 (NĐ 100) + 21 (TT 05) = **440 chunks** từ 5 văn bản.
 
 **Thêm văn bản mới:** tìm `ItemID` trên vbpl.vn (số cuối URL chi tiết) → thêm 1 dòng
 vào `SOURCES` trong `sources.py` → chạy lại lệnh trên. Không tải tay, không sửa code.

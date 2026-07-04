@@ -5,11 +5,14 @@ với think=false + temperature 0.1; embedding cắt theo max_embed_chars.
 """
 
 import json
+import logging
 from collections.abc import AsyncIterator
 
 import httpx
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaEmbeddingProvider:
@@ -19,14 +22,32 @@ class OllamaEmbeddingProvider:
         # Cắt độ dài: model embedding từ chối input quá dài. Phần đầu một điều
         # luật (tiêu đề + khoản mở) rất đại diện cho chủ đề, nên cắt không hại
         # chất lượng khớp.
-        prompt = text[: settings.max_embed_chars]
+        base = text[: settings.max_embed_chars]
+        # bge-m3 giới hạn ~8192 token; một số điều tiếng Việt dày đặc (nhiều số/
+        # danh sách) vẫn vượt giới hạn dù đã cắt theo KÝ TỰ → Ollama trả 500. Thử
+        # lại với độ dài ngắn dần để vẫn embed được — chỉ ảnh hưởng đúng điều bị
+        # lỗi, các điều khác vẫn embed ở độ dài đầy đủ (không đổi hành vi).
+        limits = [len(base), *[n for n in (6000, 4000, 2000) if n < len(base)]]
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                f"{settings.ollama_base_url}/api/embeddings",
-                json={"model": settings.embed_model, "prompt": prompt},
-            )
-            response.raise_for_status()
-            return response.json()["embedding"]
+            for i, limit in enumerate(limits):
+                response = await client.post(
+                    f"{settings.ollama_base_url}/api/embeddings",
+                    json={"model": settings.embed_model, "prompt": base[:limit]},
+                )
+                if response.is_success:
+                    return response.json()["embedding"]
+                # CHỈ lùi độ dài khi 500 (input quá dài). Lỗi khác (503 down, 429,
+                # 4xx) → raise ngay: thử ngắn hơn không giải quyết, chỉ che lỗi thật.
+                is_last = i == len(limits) - 1
+                if response.status_code != 500 or is_last:
+                    response.raise_for_status()
+                logger.warning(
+                    "embed_text: Ollama 500 ở %d ký tự, thử lại với %d ký tự",
+                    limit,
+                    limits[i + 1],
+                )
+        # Không tới được: vòng lặp luôn return (thành công) hoặc raise (lỗi).
+        raise RuntimeError("embed_text: không embed được sau khi thử mọi độ dài")
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         return [await self.embed_text(t) for t in texts]
@@ -35,9 +56,7 @@ class OllamaEmbeddingProvider:
 class OllamaChatProvider:
     """Streaming chat qua Ollama /api/chat (thinking tắt)."""
 
-    async def stream(
-        self, system_prompt: str, user_message: str
-    ) -> AsyncIterator[str]:
+    async def stream(self, system_prompt: str, user_message: str) -> AsyncIterator[str]:
         async with httpx.AsyncClient(timeout=300.0) as client:
             async with client.stream(
                 "POST",

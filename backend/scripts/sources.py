@@ -33,4 +33,25 @@ SOURCES: list[LegalSource] = [
         document_id="95/2024/ND-CP",
         name="Nghị định 95/2024/NĐ-CP",
     ),
+    LegalSource(
+        vbpl_id=169711,
+        html="nghi-dinh-98-2024.html",
+        text="nghi-dinh-98-2024.txt",
+        document_id="98/2024/ND-CP",
+        name="Nghị định 98/2024/NĐ-CP",  # cải tạo, xây dựng lại nhà chung cư
+    ),
+    LegalSource(
+        vbpl_id=169712,
+        html="nghi-dinh-100-2024.html",
+        text="nghi-dinh-100-2024.txt",
+        document_id="100/2024/ND-CP",
+        name="Nghị định 100/2024/NĐ-CP",  # phát triển & quản lý nhà ở xã hội
+    ),
+    LegalSource(
+        vbpl_id=169122,
+        html="thong-tu-05-2024-bxd.html",
+        text="thong-tu-05-2024-bxd.txt",
+        document_id="05/2024/TT-BXD",
+        name="Thông tư 05/2024/TT-BXD",  # quy định chi tiết một số điều của Luật Nhà ở
+    ),
 ]

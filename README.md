@@ -4,8 +4,9 @@
 tự nhiên** và nhận câu trả lời dễ hiểu kèm **trích dẫn điều luật**. Toàn bộ AI chạy
 **local** qua Ollama — không gọi API bên ngoài.
 
-Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (Luật số 27/2023/QH15)** và **Nghị định
-95/2024/NĐ-CP** (198 + 95 điều).
+Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (27/2023/QH15)** + bộ văn bản quy định chi tiết —
+**NĐ 95/2024** (chung), **NĐ 98/2024** (cải tạo chung cư), **NĐ 100/2024** (nhà ở xã hội),
+**TT 05/2024/TT-BXD** — tổng **440 điều** (chunk).
 
 ## Tính năng
 
