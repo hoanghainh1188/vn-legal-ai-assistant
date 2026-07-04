@@ -1,8 +1,9 @@
 """One-command ingestion: source HTML → clean text → chunk → embed → Postgres+pgvector.
 
-Runs the whole corpus declared in `sources.py`. Idempotent — áp schema rồi upsert
-theo khoá (document_id, article_number), chạy lại không nhân bản. Nếu HTML của một
-nguồn có sẵn thì re-parse vào `data/raw/*.txt`; nếu không thì dùng .txt hiện có.
+Runs the whole corpus declared in `sources.py`. Idempotent — upsert theo khoá
+(document_id, article_number), chạy lại không nhân bản. Bảng `legal_chunks` do
+Supabase migrations tạo (`supabase db reset`). Nếu HTML của một nguồn có sẵn thì
+re-parse vào `data/raw/*.txt`; nếu không thì dùng .txt hiện có.
 
     uv run python scripts/ingest.py
 """
@@ -20,7 +21,6 @@ from app.providers import factory
 from scripts.chunk_legal_text import chunk_legal_text
 from scripts.fetch_sources import ensure_html
 from scripts.html_to_legal_text import html_to_legal_text
-from scripts.init_db import apply_schema
 from scripts.sources import SOURCES, LegalSource
 
 BASE = Path(__file__).resolve().parent.parent
@@ -59,7 +59,7 @@ async def ingest_source(source: LegalSource, repo: repository.VectorRepository) 
 
 
 async def main() -> None:
-    await apply_schema()  # idempotent — bảo đảm bảng + index tồn tại
+    # Schema (legal_chunks) do Supabase migrations tạo — chạy `supabase db reset` trước.
     repo = repository.get_vector_repository()
 
     total = 0

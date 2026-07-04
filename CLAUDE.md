@@ -5,10 +5,15 @@ PoC web app tra cứu pháp luật Việt Nam bằng AI (RAG), phạm vi: Luật
 Đối tượng: người dân phổ thông. Ngôn ngữ: tiếng Việt.
 
 ## Tech stack
-- **Frontend**: Next.js 14+ (App Router), Tailwind CSS, Lucide Icons
-- **Backend**: Python 3.12, FastAPI, Postgres + pgvector (kho vector thống nhất; local qua Docker Compose, biến `VN_LEGAL_DATABASE_URL`)
+- **Frontend**: Next.js 16 (App Router), Tailwind CSS, Lucide Icons, `@supabase/ssr` (auth)
+- **Backend**: Python 3.12, FastAPI (chỉ lo RAG; không gác auth)
+- **Kho + Auth**: **Supabase local** (Postgres + pgvector + Auth), quản schema qua migrations; backend nối qua `VN_LEGAL_DATABASE_URL`
 - **AI**: Ollama local — `qwen3.5` (chat), `bge-m3` (embedding)
-- **Package managers**: `uv` (Python), `npm` (Node)
+- **Package managers**: `uv` (Python), `npm` (Node), `supabase` CLI (local stack)
+
+> Lịch sử tra cứu (`public.search_history`) cô lập theo user bằng **RLS** (`user_id = auth.uid()`);
+> frontend chỉ dùng **anon key** — không đưa `service_role` vào client. Supabase local dùng dải
+> cổng **544xx** (tránh xung đột với project Supabase khác). Chi tiết: `docs/architecture.md` §7.
 
 ## Cấu trúc và ý nghĩa từng phần
 
@@ -49,15 +54,21 @@ Trình tự: design-intake → [handoff] specify → clarify → plan → tasks 
 
 ## Cách chạy local
 ```bash
-# Backend (port 8000)
+# 0. Supabase local (Postgres + pgvector + Auth) — cổng 544xx cho project này
+supabase start && supabase db reset          # áp migrations (legal_chunks + search_history + RLS)
+export VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54422/postgres
+
+# 1. Ingest data (chạy 1 lần) — nạp 293 chunk vào Postgres của Supabase
+cd backend && uv run python scripts/ingest.py
+
+# 2. Backend (port 8000)
 cd backend && uv run uvicorn app.main:app --reload --port 8000
 
-# Frontend (port 3000)
+# 3. Frontend (port 3000) — cần frontend/.env.local với NEXT_PUBLIC_SUPABASE_URL/ANON_KEY
 cd frontend && npm run dev
-
-# Ingest data (chạy 1 lần)
-cd backend && uv run python scripts/ingest.py
 ```
+
+E2E: `cd frontend && npx playwright test` (cần Supabase + backend đang chạy).
 
 ## Quy tắc bắt buộc
 1. Mọi mâu thuẫn giữa basic design / detail design / Figma phải được nêu vào `/speckit.clarify`,

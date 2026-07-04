@@ -20,17 +20,18 @@ Phạm vi dữ liệu hiện tại: **Luật Nhà ở 2023 (Luật số 27/2023/
 
 | Tầng | Công nghệ |
 |------|-----------|
-| Frontend | Next.js 14 (App Router), Tailwind CSS, react-markdown, Lucide Icons |
-| Backend | Python 3.12, FastAPI, Postgres + pgvector (kho vector, local qua Docker) |
+| Frontend | Next.js 16 (App Router), Tailwind CSS, react-markdown, Lucide Icons |
+| Backend | Python 3.12, FastAPI (chỉ lo RAG) |
+| Kho + Auth | Supabase local (Postgres + pgvector + Auth), schema qua migrations |
 | AI | Ollama — `qwen3.5` (chat), `bge-m3` (embedding, 1024-dim) |
 | Retrieval | Hybrid: dense (vector) + lexical BM25-lite, fusion RRF |
-| Package managers | `uv` (Python), `npm` (Node) |
+| Package managers | `uv` (Python), `npm` (Node), `supabase` CLI |
 
 ## Yêu cầu
 
 - Python 3.12, [`uv`](https://github.com/astral-sh/uv)
 - Node.js 18+, npm
-- Docker (Postgres + pgvector cục bộ)
+- Docker + [`supabase` CLI](https://supabase.com/docs/guides/cli) (chạy Postgres+pgvector+Auth local)
 - [Ollama](https://ollama.com) đang chạy, đã pull 2 model:
 
 ```bash
@@ -41,11 +42,12 @@ ollama pull bge-m3
 ## Cài đặt & chạy
 
 ```bash
-# 0. Khởi Postgres + pgvector (local) và đặt biến kết nối
-docker compose up -d db
-export VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/vn_legal
+# 0. Khởi Supabase local (Postgres + pgvector + Auth) và áp migrations
+supabase start
+supabase db reset
+export VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54422/postgres
 
-# 1. Nạp dữ liệu vào Postgres (chạy 1 lần — tự áp schema + fetch toàn văn từ API Bộ Tư pháp)
+# 1. Nạp dữ liệu (chạy 1 lần — tự fetch toàn văn từ API Bộ Tư pháp → Postgres của Supabase)
 cd backend
 uv run python scripts/ingest.py
 
@@ -53,15 +55,20 @@ uv run python scripts/ingest.py
 uv run uvicorn app.main:app --reload --port 8000
 
 # 3. Chạy frontend (port 3000) — ở terminal khác
+#    Tạo frontend/.env.local từ .env.local.example (URL + anon key từ `supabase start`)
 cd frontend
 npm install
 npm run dev
 ```
 
-Mở http://localhost:3000 và bắt đầu tra cứu.
+Mở http://localhost:3000 và bắt đầu tra cứu. Đăng ký/đăng nhập để lưu **lịch sử tra cứu**
+(guest vẫn tra cứu bình thường).
 
-> **Lưu ý:** bước ingest (Pha 1) chỉ chạy khi cài đặt hoặc cập nhật dữ liệu. Khi search
-> (Pha 2), ứng dụng **không** truy cập internet — chỉ đọc Postgres + pgvector + Ollama local.
+> **Cổng:** project này dùng dải **544xx** cho Supabase local (đổi từ mặc định 543xx) để chạy
+> song song với project Supabase khác. Lấy URL/anon key thực tế từ output `supabase start`.
+>
+> **Lưu ý:** ingest chỉ chạy khi cài đặt/cập nhật dữ liệu. Khi search, ứng dụng **không** truy
+> cập internet — chỉ đọc Supabase + Ollama local.
 
 ## Cách hoạt động (RAG)
 
@@ -88,14 +95,19 @@ cần tải thủ công.
 ## Cấu trúc dự án
 
 ```
+supabase/
+├── config.toml              # Supabase local (cổng 544xx)
+└── migrations/              # NGUỒN schema — supabase db reset
+    ├── *_legal_chunks.sql   # extension vector + legal_chunks + HNSW
+    └── *_search_history.sql # search_history + RLS + grant authenticated
+
 backend/
 ├── app/
 │   ├── main.py              # FastAPI app + CORS + lifespan (đóng pool)
 │   ├── config.py            # Settings (model, DATABASE_URL, top_k...)
-│   ├── db/                  # Kho vector Postgres+pgvector
+│   ├── db/                  # Kho vector (Postgres của Supabase)
 │   │   ├── connection.py    # Pool psycopg3 async + đăng ký pgvector
-│   │   ├── repository.py    # VectorRepository (seam) + PgVectorRepository
-│   │   └── schema.sql       # legal_chunks + index HNSW cosine
+│   │   └── repository.py    # VectorRepository (seam) + PgVectorRepository
 │   ├── routers/query.py     # POST /api/query (SSE)
 │   ├── providers/           # Abstraction LLM/embedding (Ollama/Claude)
 │   ├── services/
@@ -107,17 +119,18 @@ backend/
 │   ├── fetch_sources.py     # Fetch toàn văn từ API MOJ
 │   ├── html_to_legal_text.py# HTML → text sạch (bỏ mục lục)
 │   ├── chunk_legal_text.py  # Tách theo "Điều"
-│   ├── init_db.py           # Áp schema.sql (idempotent)
-│   └── ingest.py            # 1 lệnh: schema → fetch → chunk → embed → upsert
+│   └── ingest.py            # 1 lệnh: fetch → chunk → embed → upsert
 ├── data/raw_html/           # Cache HTML nguồn (fetch từ API)
 ├── data/raw/                # Text đã xử lý (đầu vào ingest)
-└── tests/                   # unit (không cần DB) + integration (cần Postgres)
+└── tests/                   # unit (không cần DB) + integration (Postgres/RLS)
 
 frontend/
-├── app/                     # page.tsx, layout, api/query proxy
-├── components/search|result/# SearchBar, AnswerStream, LegalReference...
-├── hooks/useStreamQuery.ts  # Parse SSE stream
-└── lib/                     # api.ts, types.ts
+├── app/                     # page.tsx, layout, login, history, api/query proxy
+├── components/{search,result,auth,layout}/  # UI + AuthForm/UserMenu/Header
+├── hooks/useStreamQuery.ts  # Parse SSE + ghi lịch sử sau 'done'
+├── lib/                     # api.ts, types.ts, history.ts, supabase/{client,server}
+├── proxy.ts                 # Refresh phiên Supabase (cookie httpOnly)
+└── tests/e2e/               # Playwright: auth + history
 ```
 
 ## Kiểm thử

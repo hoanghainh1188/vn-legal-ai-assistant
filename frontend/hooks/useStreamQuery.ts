@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import { searchStream } from "@/lib/api";
-import type { SearchState } from "@/lib/types";
+import { saveHistory } from "@/lib/history";
+import type { SearchState, SourceDocument } from "@/lib/types";
 
 const INITIAL_STATE: SearchState = {
   status: "idle",
@@ -21,12 +22,16 @@ export function useStreamQuery() {
 
     setState({ status: "loading", answer: "", sources: [], error: null });
 
+    // Giữ sources của lượt này để ghi lịch sử sau khi 'done' (state cập nhật bất đồng bộ).
+    let capturedSources: SourceDocument[] = [];
+
     try {
       for await (const event of searchStream(query)) {
         if (abortRef.current?.signal.aborted) break;
 
         switch (event.type) {
           case "sources":
+            capturedSources = event.data;
             setState((prev) => ({
               ...prev,
               status: "streaming",
@@ -41,6 +46,11 @@ export function useStreamQuery() {
             break;
           case "done":
             setState((prev) => ({ ...prev, status: "done" }));
+            // Ghi lịch sử nếu đã đăng nhập (guest tự bỏ qua). Không chặn luồng UI,
+            // nhưng bắt lỗi để tránh unhandled rejection và có tín hiệu debug.
+            saveHistory(query, capturedSources).catch((e) =>
+              console.warn("[history]", e),
+            );
             break;
           case "error":
             // Lỗi giữa chừng stream: đánh dấu lỗi, KHÔNG coi phần đã nhận là

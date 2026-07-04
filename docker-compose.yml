@@ -1,20 +1,10 @@
-services:
-  db:
-    image: pgvector/pgvector:pg16
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=vn_legal
-    ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d vn_legal"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+# Postgres + Auth do Supabase local stack cung cấp — chạy riêng bằng `supabase start`
+# (KHÔNG khai báo ở đây). File này chỉ đóng gói backend FastAPI.
+#
+# Postgres của Supabase local mặc định ở cổng 54422 trên host (project này đổi dải 544xx
+# để tránh xung đột với project Supabase khác). Từ trong container, dùng host.docker.internal.
 
+services:
   backend:
     build:
       context: ./backend
@@ -23,12 +13,6 @@ services:
       - "8000:8000"
     environment:
       - VN_LEGAL_OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@db:5432/vn_legal
-    depends_on:
-      db:
-        condition: service_healthy
+      - VN_LEGAL_DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:54422/postgres
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-volumes:
-  pg_data:
