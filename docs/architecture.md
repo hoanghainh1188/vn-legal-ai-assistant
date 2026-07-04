@@ -25,7 +25,7 @@ phổ thông. Toàn bộ AI chạy **local qua Ollama** — không gọi API bê
 
 ```mermaid
 graph TB
-    subgraph Client["Frontend — Next.js 14 :3000"]
+    subgraph Client["Frontend — Next.js 16 :3000"]
         UI["SearchBar / AnswerStream (markdown) / LegalReference"]
         Hook["useStreamQuery hook"]
         Proxy["API route /api/query (proxy)"]
