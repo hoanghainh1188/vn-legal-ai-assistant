@@ -49,7 +49,7 @@
 ### Tests (viết trước)
 - [X] T015 [P] [US2] Test `ClaudeChatProvider.stream` yield text (mock `anthropic` messages.stream) trong `backend/tests/test_claude_provider.py`
 - [X] T016 [P] [US2] Test factory raise lỗi cấu hình rõ ràng khi `chat_provider=claude` mà thiếu `claude_api_key`, **và xác nhận `claude_api_key` KHÔNG xuất hiện trong thông điệp lỗi/log** (FR-007), trong `backend/tests/test_providers.py`
-- [X] T017 [US2] Test `rag.search_stream` phát sự kiện SSE `error` (không phát `done`) khi provider lỗi sau vài token, trong `backend/tests/test_query.py`
+- [X] T017 [US2] Test `rag.search_stream` phát sự kiện SSE `error` (không phát `done`) khi provider lỗi sau vài token — đặt trong `backend/tests/test_rag.py` (`TestSearchStreamMidStreamError`)
 
 ### Implementation
 - [X] T018 [US2] Hiện thực `ClaudeChatProvider` trong `backend/app/providers/claude.py` (Anthropic async SDK, `messages.stream` → `text_stream`, model `claude_model`, timeout `claude_timeout`)
@@ -72,7 +72,7 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T024 [P] (⚠ guard chặn ghi .env* — cần dán tay) Cập nhật `backend/.env.example` liệt kê biến mới (VN_LEGAL_CHAT_PROVIDER, EMBEDDING_PROVIDER, CLAUDE_API_KEY, CLAUDE_MODEL, CLAUDE_TIMEOUT)
+- [X] T024 [P] Cập nhật `backend/.env.example` (CHAT_PROVIDER, EMBEDDING_PROVIDER, CLAUDE_API_KEY, CLAUDE_MODEL, CLAUDE_TIMEOUT, CLAUDE_MAX_TOKENS; sửa EMBED_MODEL→bge-m3)
 - [X] T025 [P] Cập nhật `docs/architecture.md`: lớp provider abstraction + sự kiện SSE `error`
 - [X] T026 Chạy `uv run ruff check .` và kiểm tra coverage ≥ 80% (`uv run pytest --cov`)
 - [X] T027 Chạy `npm run build` ở `frontend/` (type-check xử lý sự kiện error)

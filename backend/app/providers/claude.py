@@ -27,6 +27,7 @@ class ClaudeChatProvider:
         async with self._client.messages.stream(
             model=settings.claude_model,
             max_tokens=settings.claude_max_tokens,
+            temperature=0.1,  # nhất quán với Ollama; câu trả lời pháp lý ổn định
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         ) as stream:

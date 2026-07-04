@@ -14,7 +14,13 @@ class ChatProvider(Protocol):
     def stream(
         self, system_prompt: str, user_message: str
     ) -> AsyncIterator[str]:
-        """Yield các đoạn text của câu trả lời (không metadata/thinking)."""
+        """Trả về một AsyncIterator các đoạn text (không metadata/thinking).
+
+        Hiện thực là **async generator** (`async def stream(...): ... yield ...`);
+        vì vậy annotation ở đây là `def ... -> AsyncIterator[str]` (gọi `stream()`
+        trả iterator ngay, KHÔNG await lời gọi). Caller dùng
+        `async for token in provider.stream(...)`.
+        """
         ...
 
 

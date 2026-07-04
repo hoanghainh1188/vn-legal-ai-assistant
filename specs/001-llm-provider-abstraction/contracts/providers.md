@@ -7,10 +7,12 @@ from collections.abc import AsyncIterator
 from typing import Protocol
 
 class ChatProvider(Protocol):
-    async def stream(
+    # Hiện thực là async generator (async def + yield); annotation là
+    # `def ... -> AsyncIterator[str]` vì gọi stream() trả iterator ngay (không await).
+    def stream(
         self, system_prompt: str, user_message: str
     ) -> AsyncIterator[str]:
-        """Yield các đoạn TEXT của câu trả lời (không metadata/thinking)."""
+        """Trả về AsyncIterator các đoạn TEXT (không metadata/thinking)."""
         ...
 ```
 
