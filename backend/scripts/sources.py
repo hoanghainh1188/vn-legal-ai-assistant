@@ -74,4 +74,15 @@ SOURCES: list[LegalSource] = [
         eff_date="2024-08-01",
         domain="Nhà ở",
     ),
+    # --- Lĩnh vực Đất đai (F2) ---
+    LegalSource(
+        vbpl_id=177815,
+        html="luat-dat-dai-2024.html",
+        text="luat-dat-dai-2024.txt",
+        document_id="31/2024/QH15",
+        name="Luật Đất đai 2024",
+        eff_status="Hết hiệu lực một phần",
+        eff_date="2025-01-01",
+        domain="Đất đai",
+    ),
 ]

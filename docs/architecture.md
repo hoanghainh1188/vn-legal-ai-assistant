@@ -52,7 +52,7 @@ graph TB
         QWEN["qwen3.5 (chat LLM)"]
     end
 
-    PG[("Postgres + pgvector<br/>legal_chunks — 440 chunks")]
+    PG[("Postgres + pgvector<br/>legal_chunks — 700 chunks / 2 lĩnh vực")]
 
     Proxy -->|"POST + SSE stream"| Router
     Repo --> PG
@@ -83,7 +83,7 @@ flowchart LR
 — tự động áp schema (idempotent), **fetch toàn văn từ API Bộ Tư pháp** (nếu chưa có cache),
 parse → chunk → embed → **upsert** vào Postgres cho **mọi** tài liệu trong `scripts/sources.py`.
 Upsert theo khoá `(document_id, article_number)` nên chạy lại không nhân bản. Kết quả:
-198 (Luật) + 95 (NĐ 95) + 48 (NĐ 98) + 78 (NĐ 100) + 21 (TT 05) = **440 chunks** từ 5 văn bản.
+Nhà ở: 198 + 95 + 48 + 78 + 21 = 440. Đất đai: 260 (Luật Đất đai 2024). Tổng **700 chunks / 6 văn bản / 2 lĩnh vực**.
 
 **Thêm văn bản mới:** tìm `ItemID` trên vbpl.vn (số cuối URL chi tiết) → thêm 1 dòng
 vào `SOURCES` trong `sources.py` → chạy lại lệnh trên. Không tải tay, không sửa code.

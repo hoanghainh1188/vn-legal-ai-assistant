@@ -4,9 +4,11 @@
 tự nhiên** và nhận câu trả lời dễ hiểu kèm **trích dẫn điều luật**, **lọc theo lĩnh vực**.
 Nền tảng **đa lĩnh vực, mở rộng dần** (thêm lĩnh vực = thêm văn bản + re-ingest).
 
-Lĩnh vực hiện có: **Nhà ở** — Luật Nhà ở 2023 (27/2023/QH15) + bộ văn bản quy định chi tiết
-(NĐ 95/98/100/2024, TT 05/2024/TT-BXD) — tổng **440 điều** (chunk). Các lĩnh vực khác (đất đai,
-lao động…) thêm dần.
+Lĩnh vực hiện có (**700 điều / 2 lĩnh vực**):
+- **Nhà ở** — Luật Nhà ở 2023 (27/2023/QH15) + NĐ 95/98/100/2024 + TT 05/2024/TT-BXD (440 điều).
+- **Đất đai** — Luật Đất đai 2024 (31/2024/QH15) (260 điều).
+
+Các lĩnh vực khác (lao động, doanh nghiệp…) thêm dần — chỉ thêm văn bản + `domain`, re-ingest.
 
 ## Tính năng
 
