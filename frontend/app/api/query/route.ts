@@ -10,13 +10,10 @@ export async function POST(request: Request) {
   });
 
   if (!backendResponse.ok) {
-    return new Response(
-      JSON.stringify({ error: "Backend request failed" }),
-      {
-        status: backendResponse.status,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Backend request failed" }), {
+      status: backendResponse.status,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const reader = backendResponse.body?.getReader();

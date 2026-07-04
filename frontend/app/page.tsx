@@ -30,8 +30,7 @@ export default function Home() {
               Tra cứu Luật Nhà ở
             </h1>
             <p className="mt-2 text-slate-500 max-w-md mx-auto">
-              Hỏi bằng ngôn ngữ tự nhiên về Luật Nhà ở 2023 và Nghị định
-              95/2024
+              Hỏi bằng ngôn ngữ tự nhiên về Luật Nhà ở 2023 và Nghị định 95/2024
             </p>
           </div>
           <SearchBar onSearch={handleSearch} isLoading={false} size="large" />
@@ -82,10 +81,7 @@ export default function Home() {
             </div>
           )}
 
-          <AnswerStream
-            answer={answer}
-            isStreaming={status === "streaming"}
-          />
+          <AnswerStream answer={answer} isStreaming={status === "streaming"} />
 
           {isActive && <LegalReference sources={sources} />}
 

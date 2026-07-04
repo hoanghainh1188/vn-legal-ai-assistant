@@ -53,7 +53,10 @@ export function AnswerStream({ answer, isStreaming }: AnswerStreamProps) {
 
   return (
     <div className="animate-fade-in text-slate-800">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={markdownComponents}
+      >
         {answer}
       </ReactMarkdown>
       {isStreaming && (
