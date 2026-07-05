@@ -139,9 +139,19 @@ frontend/
 ## Kiểm thử
 
 ```bash
-cd backend && uv run pytest        # 27 tests: chunking, parser, hybrid, RAG, API
-cd frontend && npm run build       # kiểm tra build + type-check
+# Backend (pytest) — chunking, parser, hybrid, RAG, API, repository, observability
+cd backend && uv run pytest
+
+# Frontend unit (Vitest + RTL) — parse SSE, state machine, history, logic component
+cd frontend && npm test              # hoặc: npm run test:coverage (≈92% stmt)
+cd frontend && npx tsc --noEmit      # type-check
+
+# Frontend E2E (Playwright) — tra cứu (mock SSE) + auth + lịch sử/RLS (cần Supabase)
+cd frontend && supabase start && npm run e2e
 ```
+
+> Unit test KHÔNG cần backend/Supabase (mock). E2E: luồng tra cứu + history dùng mock SSE (deterministic);
+> auth + cô lập lịch sử chạy thật trên Supabase local.
 
 ## Deploy
 

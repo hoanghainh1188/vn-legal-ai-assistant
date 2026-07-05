@@ -302,3 +302,18 @@ Hệ thống được tổng quát hoá thành trợ lý pháp luật **đa lĩn
 > **Tăng dần**: F1 là nền; mỗi lĩnh vực mới (đất đai, lao động…) thêm sau như feature dữ liệu (giống Pha 7)
 > — chỉ thêm `LegalSource` + `domain` + re-ingest. Đổi định vị trong `constitution.md` (tên "Trợ lý Luật
 > Nhà ở") thuộc file gác cổng → PR steward riêng.
+
+## 11. Kiểm thử frontend (Pha 5)
+
+Hai tầng test, tách rõ:
+
+- **Unit (Vitest + React Testing Library)** — `frontend/*.test.{ts,tsx}`, môi trường jsdom, KHÔNG cần
+  backend/Supabase (mock `fetch` + supabase client). Phủ: `lib/api` (parse SSE), `useStreamQuery` (state
+  machine), `lib/history` (guest skip), logic component (LegalReference/DomainFilter/SearchBar/AnswerStream).
+  Chạy: `cd frontend && npm test` (hoặc `npm run test:coverage`). Coverage ≈ **92% stmt / 96% line**.
+- **E2E (Playwright)** — `frontend/tests/e2e/*.spec.ts`. Luồng tra cứu (`search.spec`) + history dùng **mock
+  SSE** (`page.route`) → deterministic, không cần Ollama. Auth + persist lịch sử + RLS cô lập vẫn chạy thật
+  trên **Supabase local**. Chạy: `npm run e2e` (cần `supabase start`).
+
+> Tách runner qua đuôi file: `*.test.tsx` = Vitest; `*.spec.ts` (trong `tests/e2e`) = Playwright.
+> CI (`.github/workflows/smoke-test.yml`) chạy job `frontend-tests`: `npm ci` → `tsc` → unit + coverage.
