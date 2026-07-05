@@ -7,8 +7,8 @@ export function SafetyDisclaimer() {
         <Info size={16} className="shrink-0 mt-0.5" />
         <span>
           Đây là công cụ tra cứu tham khảo dựa trên AI, không thay thế tư vấn
-          pháp lý chuyên nghiệp. Phạm vi dữ liệu hiện tại: Luật Nhà ở 2023 và
-          Nghị định 95/2024/NĐ-CP.
+          pháp lý chuyên nghiệp. Phạm vi dữ liệu phụ thuộc vào lĩnh vực đã được
+          nạp — xem bộ lọc lĩnh vực phía trên.
         </span>
       </p>
     </div>
