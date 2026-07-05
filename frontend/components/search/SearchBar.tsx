@@ -51,7 +51,7 @@ export function SearchBar({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Hỏi về Luật Nhà ở..."
+          placeholder="Hỏi về pháp luật Việt Nam..."
           disabled={isLoading}
           className={`
             flex-1 bg-transparent outline-none placeholder:text-slate-400
